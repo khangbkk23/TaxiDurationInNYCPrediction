@@ -33,4 +33,4 @@ def test_predict():
 if __name__ == "__main__":
     test_health()
     test_predict()
-    print("✓ All tests passed!")
+    print("All tests passed!")
