@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+pydantic
+scikit-learn
+pandas
+numpy
+jinja2
+python-multipart
+seaborn
+xgboost==2.0.3

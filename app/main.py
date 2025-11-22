@@ -1,105 +1,111 @@
-"""
-FastAPI Application - ĐƠN GIẢN
-"""
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from typing import Optional
 import pickle
 import numpy as np
-import os
+import pandas as pd
 from pathlib import Path
+import sys
+import os
 
-from src.preprocessing import engineer_features
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from src.preprocessing import preprocess_data
 
-app = FastAPI(
-    title="NYC Taxi Duration Prediction",
-    description="Machine Learning",
-    version="1.0.0"
-)
-
-print("Loading model...")
-with open('artifacts/model.pkl', 'rb') as f:
-    model = pickle.load(f)
-
-with open('artifacts/scaler.pkl', 'rb') as f:
-    scaler = pickle.load(f)
-
-with open('artifacts/feature_names.pkl', 'rb') as f:
-    feature_names = pickle.load(f)
-
-NUMERICAL_COLS = [
+ALL_FEATURES = [
     'vendor_id', 'passenger_count', 'pickup_longitude', 'pickup_latitude',
-    'dropoff_longitude', 'dropoff_latitude', 'pickup_hour', 'pickup_weekday',
-    'pickup_month', 'distance_km', 'direction', 'center_latitude', 'center_longitude'
+    'dropoff_longitude', 'dropoff_latitude', 'store_and_fwd_flag',
+    'pickup_year', 'pickup_month', 'pickup_day', 'pickup_hour',
+    'pickup_minute', 'pickup_weekday', 'pickup_yday', 'pickup_weekend',
+    'is_rush_hour', 'is_night', 'distance_km', 'direction',
+    'center_latitude', 'center_longitude'
 ]
 
-print("Model loaded!")
+SCALED_FEATURES = [
+    'vendor_id', 'passenger_count',
+    'pickup_longitude', 'pickup_latitude',
+    'dropoff_longitude', 'dropoff_latitude',
+    'pickup_hour', 'pickup_weekday', 'pickup_month',
+    'distance_km', 'direction',
+    'center_latitude', 'center_longitude'
+]
 
-# Pydantic models
+app = FastAPI()
+
+print("Loading artifacts...")
+try:
+    with open('artifacts/best_model.pkl', 'rb') as f:
+        model = pickle.load(f)
+    with open('artifacts/scaler.pkl', 'rb') as f:
+        scaler = pickle.load(f)
+    print("Đã load Model và Scaler thành công!")
+except Exception as e:
+    print(f"Lỗi load artifacts: {e}")
+    model = None
+    scaler = None
+
 class TripInput(BaseModel):
-    vendor_id: int = Field(..., ge=1, le=2)
-    pickup_datetime: str = Field(..., example="2016-06-15 10:30:00")
-    passenger_count: int = Field(..., ge=1, le=6)
+    vendor_id: int
+    pickup_datetime: str
+    passenger_count: int
     pickup_longitude: float
     pickup_latitude: float
     dropoff_longitude: float
     dropoff_latitude: float
     store_and_fwd_flag: Optional[str] = "N"
 
-# Trang chủ - Serve HTML
 @app.get("/", response_class=HTMLResponse)
 async def home():
-    html_file = Path("app/templates/index.html")
-    if html_file.exists():
-        return html_file.read_text(encoding='utf-8')
-    return "<h1>API is running! Go to <a href='/docs'>/docs</a></h1>"
+    p = Path("app/templates/index.html")
+    return p.read_text(encoding="utf-8") if p.exists() else "<h1>File not found</h1>"
 
-# API dự đoán
 @app.post("/predict")
 async def predict(trip: TripInput):
+    if not model or not scaler:
+        return {"success": False, "detail": "Model chưa được load"}
+
     try:
-        # Chuyển sang dict
-        data = trip.dict()
+        data_dict = trip.dict()
+        df_input = pd.DataFrame([data_dict])
+        
+        df = preprocess_data(df_input, is_train=False)
+        for col in ALL_FEATURES:
+            if col not in df.columns:
+                df[col] = 0
+        
+        df = df[ALL_FEATURES]
+        raw_debug = df.iloc[0].to_dict()
+        try:
+            # Lấy cột cần scale
+            df_subset = df[SCALED_FEATURES]
+            # Transform
+            scaled_values = scaler.transform(df_subset)
+            # Gán ngược lại
+            df[SCALED_FEATURES] = scaled_values
+        except Exception as e:
+            return {"success": False, "detail": f"Lỗi Scaler: {str(e)}"}
 
-        # Feature engineering
-        df = engineer_features(data)
-        df = df[feature_names]
-
-        df_scaled = df.copy()
-        df_scaled[NUMERICAL_COLS] = scaler.transform(df[NUMERICAL_COLS])
-
-        log_prediction = model.predict(df_scaled)[0]
-        duration_seconds = np.expm1(log_prediction)
-        duration_minutes = duration_seconds / 60
-
-        mins = int(duration_minutes)
-        secs = int(duration_seconds % 60)
-        duration_text = f"{mins} phút {secs} giây"
+        scaled_debug = df.values[0].tolist()
+        log_pred = model.predict(df)[0]
+        seconds = np.expm1(log_pred)
+        
+        if seconds < 0: seconds = 0
+        mins = int(seconds // 60)
+        secs = int(seconds % 60)
 
         return {
             "success": True,
-            "duration_seconds": round(float(duration_seconds), 2),
-            "duration_minutes": round(float(duration_minutes), 2),
-            "duration_text": duration_text,
+            "duration_text": f"{mins} phút {secs} giây",
             "distance_km": round(float(df['distance_km'].values[0]), 2),
-            "is_rush_hour": bool(df['is_rush_hour'].values[0]),
-            "is_weekend": bool(df['pickup_weekend'].values[0])
+            "is_rush_hour": bool(raw_debug.get('is_rush_hour', False)),
+            "debug_info": {
+                "raw_features": raw_debug,
+                "scaled_features": scaled_debug,
+                "model_input_order": ALL_FEATURES
+            }
         }
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
-
-# Health check
-@app.get("/health")
-async def health():
-    """Kiểm tra API"""
-    return {
-        "status": "healthy",
-        "model_loaded": model is not None
-    }
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+        import traceback
+        traceback.print_exc()
+        return {"success": False, "detail": str(e)}
