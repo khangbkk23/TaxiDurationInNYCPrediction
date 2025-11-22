@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dự đoán Thời gian Taxi</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        button:hover { opacity: 0.9; }
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f0f7ff;
+            border-radius: 8px;
+            display: none;
+        }
+        .result.show { display: block; }
+        .result h2 { color: #667eea; margin-bottom: 15px; }
+        .result-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #ddd;
+        }
+        .result-item:last-child { border-bottom: none; }
+        .error {
+            background: #fee;
+            color: #c00;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            display: none;
+        }
+        .error.show { display: block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚕 Dự đoán Thời gian Taxi NYC</h1>
+        
+        <form id="predictionForm">
+            <div class="form-group">
+                <label>Hãng Taxi</label>
+                <select name="vendor_id">
+                    <option value="1">Creative Mobile</option>
+                    <option value="2" selected>VeriFone</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Thời gian đón khách</label>
+                <input type="datetime-local" name="pickup_datetime" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Số hành khách</label>
+                <input type="number" name="passenger_count" min="1" max="6" value="1">
+            </div>
+            
+            <div class="row">
+                <div class="form-group">
+                    <label>Pickup Latitude</label>
+                    <input type="number" name="pickup_latitude" step="0.0001" value="40.7614" required>
+                </div>
+                <div class="form-group">
+                    <label>Pickup Longitude</label>
+                    <input type="number" name="pickup_longitude" step="0.0001" value="-73.9776" required>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="form-group">
+                    <label>Dropoff Latitude</label>
+                    <input type="number" name="dropoff_latitude" step="0.0001" value="40.7500" required>
+                </div>
+                <div class="form-group">
+                    <label>Dropoff Longitude</label>
+                    <input type="number" name="dropoff_longitude" step="0.0001" value="-73.9900" required>
+                </div>
+            </div>
+            
+            <button type="submit">🔮 Dự đoán</button>
+        </form>
+        
+        <div class="error" id="error"></div>
+        
+        <div class="result" id="result">
+            <h2>Kết quả dự đoán</h2>
+            <div class="result-item">
+                <strong>Thời gian dự kiến:</strong> <span id="duration"></span>
+            </div>
+            <div class="result-item">
+                <strong>Khoảng cách:</strong> <span id="distance"></span> km
+            </div>
+            <div class="result-item">
+                <strong>Giờ cao điểm:</strong> <span id="rushHour"></span>
+            </div>
+            <div class="result-item">
+                <strong>Cuối tuần:</strong> <span id="weekend"></span>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        document.querySelector('input[name="pickup_datetime"]').value = now.toISOString().slice(0, 16);
+        
+        document.getElementById('predictionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            document.getElementById('result').classList.remove('show');
+            document.getElementById('error').classList.remove('show');
+            
+            const formData = new FormData(e.target);
+            const data = {
+                vendor_id: parseInt(formData.get('vendor_id')),
+                pickup_datetime: formData.get('pickup_datetime').replace('T', ' ') + ':00',
+                passenger_count: parseInt(formData.get('passenger_count')),
+                pickup_longitude: parseFloat(formData.get('pickup_longitude')),
+                pickup_latitude: parseFloat(formData.get('pickup_latitude')),
+                dropoff_longitude: parseFloat(formData.get('dropoff_longitude')),
+                dropoff_latitude: parseFloat(formData.get('dropoff_latitude')),
+                store_and_fwd_flag: 'N'
+            };
+            
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('duration').textContent = result.duration_text;
+                    document.getElementById('distance').textContent = result.distance_km;
+                    document.getElementById('rushHour').textContent = result.is_rush_hour ? 'Có' : 'Không';
+                    document.getElementById('weekend').textContent = result.is_weekend ? 'Có' : 'Không';
+                    document.getElementById('result').classList.add('show');
+                } else {
+                    document.getElementById('error').textContent = 'Lỗi: ' + result.detail;
+                    document.getElementById('error').classList.add('show');
+                }
+            } catch (error) {
+                document.getElementById('error').textContent = 'Lỗi kết nối: ' + error.message;
+                document.getElementById('error').classList.add('show');
+            }
+        });
+    </script>
+</body>
+</html>
