@@ -3,205 +3,251 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dự đoán Thời gian Taxi</title>
+    <title>NYC Taxi Prediction AI</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            background: #f0f2f5;
             padding: 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
         }
         .container {
-            max-width: 600px;
-            margin: 0 auto;
+            display: flex;
+            width: 100%;
+            max-width: 1000px; 
             background: white;
-            padding: 30px;
             border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+            flex-direction: column;
         }
-        h1 {
-            color: #333;
-            text-align: center;
-            margin-bottom: 30px;
+        @media (min-width: 768px) {
+            .container { flex-direction: row; }
         }
-        .form-group {
-            margin-bottom: 15px;
+
+        .form-section {
+            padding: 30px;
+            flex: 1;
+            background: white;
+            z-index: 2;
         }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-            color: #555;
+
+        .map-section {
+            flex: 1.5;
+            min-height: 400px;
+            position: relative;
         }
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        h1 { color: #2c3e50; margin-bottom: 20px; font-size: 24px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; color: #555; font-size: 0.9em;}
         input, select {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
+            width: 100%; padding: 10px;
+            border: 1px solid #ddd; border-radius: 6px;
         }
-        input:focus, select:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        .row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
+        
         button {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 20px;
+            width: 100%; padding: 12px;
+            background: #3498db; color: white;
+            border: none; border-radius: 6px;
+            font-weight: bold; cursor: pointer;
+            margin-top: 10px; transition: 0.3s;
         }
-        button:hover { opacity: 0.9; }
-        .result {
-            margin-top: 30px;
-            padding: 20px;
-            background: #f0f7ff;
-            border-radius: 8px;
+        button:hover { background: #2980b9; }
+
+        .result-box {
+            margin-top: 20px; padding: 15px;
+            background: #e8f6f3; border-radius: 8px;
+            border-left: 4px solid #1abc9c;
             display: none;
         }
-        .result.show { display: block; }
-        .result h2 { color: #667eea; margin-bottom: 15px; }
-        .result-item {
-            padding: 10px 0;
-            border-bottom: 1px solid #ddd;
-        }
-        .result-item:last-child { border-bottom: none; }
-        .error {
-            background: #fee;
-            color: #c00;
-            padding: 15px;
-            border-radius: 5px;
-            margin-top: 20px;
+        .result-box.show { display: block; animation: fadeIn 0.5s; }
+        .error-box {
+            margin-top: 20px; padding: 15px;
+            background: #fdeaea; border-radius: 8px;
+            border-left: 4px solid #e74c3c; color: #c0392b;
             display: none;
         }
-        .error.show { display: block; }
+
+        .marker-label { font-weight: bold; color: #333; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🚕 Dự đoán Thời gian Taxi NYC</h1>
-        
+
+<div class="container">
+    <div class="form-section">
+        <h1>🚖 NYC Taxi AI</h1>
+        <p style="font-size: 0.9em; color: #666; margin-bottom: 20px;">Kéo thả ghim trên bản đồ để chọn điểm đi/đến.</p>
+
         <form id="predictionForm">
             <div class="form-group">
-                <label>Hãng Taxi</label>
-                <select name="vendor_id">
-                    <option value="1">Creative Mobile</option>
-                    <option value="2" selected>VeriFone</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label>Thời gian đón khách</label>
+                <label>Thời gian khởi hành</label>
                 <input type="datetime-local" name="pickup_datetime" required>
             </div>
-            
-            <div class="form-group">
-                <label>Số hành khách</label>
-                <input type="number" name="passenger_count" min="1" max="6" value="1">
-            </div>
-            
-            <div class="row">
-                <div class="form-group">
-                    <label>Pickup Latitude</label>
-                    <input type="number" name="pickup_latitude" step="0.0001" value="40.7614" required>
+
+            <div class="form-group" style="display: flex; gap: 10px;">
+                <div style="flex:1">
+                    <label>Hãng xe</label>
+                    <select name="vendor_id">
+                        <option value="1">Creative Mobile</option>
+                        <option value="2" selected>VeriFone</option>
+                    </select>
                 </div>
-                <div class="form-group">
-                    <label>Pickup Longitude</label>
-                    <input type="number" name="pickup_longitude" step="0.0001" value="-73.9776" required>
+                <div style="flex:1">
+                    <label>Số khách</label>
+                    <input type="number" name="passenger_count" min="1" max="6" value="1">
                 </div>
             </div>
-            
-            <div class="row">
-                <div class="form-group">
-                    <label>Dropoff Latitude</label>
-                    <input type="number" name="dropoff_latitude" step="0.0001" value="40.7500" required>
-                </div>
-                <div class="form-group">
-                    <label>Dropoff Longitude</label>
-                    <input type="number" name="dropoff_longitude" step="0.0001" value="-73.9900" required>
-                </div>
-            </div>
-            
-            <button type="submit">🔮 Dự đoán</button>
+
+            <input type="hidden" id="p_lat" name="pickup_latitude" value="40.7614">
+            <input type="hidden" id="p_lon" name="pickup_longitude" value="-73.9776">
+            <input type="hidden" id="d_lat" name="dropoff_latitude" value="40.7500">
+            <input type="hidden" id="d_lon" name="dropoff_longitude" value="-73.9900">
+
+            <button type="submit">🚀 Dự đoán ngay</button>
         </form>
+
+        <div id="loading" style="display:none; text-align:center; margin-top:10px;">⏳ Đang tính toán...</div>
         
-        <div class="error" id="error"></div>
-        
-        <div class="result" id="result">
-            <h2>Kết quả dự đoán</h2>
-            <div class="result-item">
-                <strong>Thời gian dự kiến:</strong> <span id="duration"></span>
-            </div>
-            <div class="result-item">
-                <strong>Khoảng cách:</strong> <span id="distance"></span> km
-            </div>
-            <div class="result-item">
-                <strong>Giờ cao điểm:</strong> <span id="rushHour"></span>
-            </div>
-            <div class="result-item">
-                <strong>Cuối tuần:</strong> <span id="weekend"></span>
+        <div class="result-box" id="result">
+            <h3 style="color:#16a085; margin-bottom:5px;">Kết quả dự báo:</h3>
+            <p style="font-size: 1.2em; font-weight: bold;" id="time_text">-- phút</p>
+            <div style="margin-top: 10px; font-size: 0.9em; color: #555;">
+                <p>📏 Quãng đường: <span id="dist_text">--</span> km</p>
+                <p>🚦 Giờ cao điểm: <span id="rush_text">--</span></p>
             </div>
         </div>
+
+        <div class="error-box" id="error"></div>
     </div>
+
+    <div class="map-section">
+        <div id="map"></div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    // --- CẤU HÌNH BẢN ĐỒ ---
+    // Tọa độ trung tâm NYC
+    const NYC_CENTER = [40.7580, -73.9855];
     
-    <script>
-        const now = new Date();
-        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        document.querySelector('input[name="pickup_datetime"]').value = now.toISOString().slice(0, 16);
+    // Khởi tạo map
+    const map = L.map('map').setView(NYC_CENTER, 13);
+
+    // Thêm lớp gạch bản đồ (OpenStreetMap - Miễn phí)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Tạo Icon tùy chỉnh (Xanh cho Điểm đón, Đỏ cho Điểm trả)
+    // Dùng filter CSS để đổi màu icon mặc định
+    const pickupIcon = new L.Icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/markers/marker-icon-2x-green.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+    });
+
+    const dropoffIcon = new L.Icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/markers/marker-icon-2x-red.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+    });
+
+    // Lấy giá trị mặc định từ input hidden
+    let pLat = parseFloat(document.getElementById('p_lat').value);
+    let pLon = parseFloat(document.getElementById('p_lon').value);
+    let dLat = parseFloat(document.getElementById('d_lat').value);
+    let dLon = parseFloat(document.getElementById('d_lon').value);
+
+    const pickupMarker = L.marker([pLat, pLon], {icon: pickupIcon, draggable: true}).addTo(map).bindPopup("Điểm đón (Kéo tôi!)").openPopup();
+    const dropoffMarker = L.marker([dLat, dLon], {icon: dropoffIcon, draggable: true}).addTo(map).bindPopup("Điểm trả (Kéo tôi!)");
+
+    function updateInputs() {
+        const pPos = pickupMarker.getLatLng();
+        const dPos = dropoffMarker.getLatLng();
+
+        document.getElementById('p_lat').value = pPos.lat.toFixed(6);
+        document.getElementById('p_lon').value = pPos.lng.toFixed(6);
+        document.getElementById('d_lat').value = dPos.lat.toFixed(6);
+        document.getElementById('d_lon').value = dPos.lng.toFixed(6);
+    }
+
+
+    pickupMarker.on('dragend', updateInputs);
+    dropoffMarker.on('dragend', updateInputs);
+
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.querySelector('input[name="pickup_datetime"]').value = now.toISOString().slice(0, 16);
+
+    document.getElementById('predictionForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
         
-        document.getElementById('predictionForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            document.getElementById('result').classList.remove('show');
-            document.getElementById('error').classList.remove('show');
-            
-            const formData = new FormData(e.target);
-            const data = {
-                vendor_id: parseInt(formData.get('vendor_id')),
-                pickup_datetime: formData.get('pickup_datetime').replace('T', ' ') + ':00',
-                passenger_count: parseInt(formData.get('passenger_count')),
-                pickup_longitude: parseFloat(formData.get('pickup_longitude')),
-                pickup_latitude: parseFloat(formData.get('pickup_latitude')),
-                dropoff_longitude: parseFloat(formData.get('dropoff_longitude')),
-                dropoff_latitude: parseFloat(formData.get('dropoff_latitude')),
-                store_and_fwd_flag: 'N'
-            };
-            
-            try {
-                const response = await fetch('/predict', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
+        const resultBox = document.getElementById('result');
+        const errorBox = document.getElementById('error');
+        const loading = document.getElementById('loading');
+
+        resultBox.classList.remove('show');
+        errorBox.style.display = 'none';
+        loading.style.display = 'block';
+
+        const formData = new FormData(e.target);
+        const data = {
+            vendor_id: parseInt(formData.get('vendor_id')),
+            pickup_datetime: formData.get('pickup_datetime').replace('T', ' ') + ':00',
+            passenger_count: parseInt(formData.get('passenger_count')),
+            // Lấy tọa độ từ hidden input (đã được map cập nhật)
+            pickup_longitude: parseFloat(formData.get('pickup_longitude')),
+            pickup_latitude: parseFloat(formData.get('pickup_latitude')),
+            dropoff_longitude: parseFloat(formData.get('dropoff_longitude')),
+            dropoff_latitude: parseFloat(formData.get('dropoff_latitude')),
+            store_and_fwd_flag: 'N'
+        };
+
+        try {
+            const response = await fetch('/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+            loading.style.display = 'none';
+
+            if (result.success) {
+                document.getElementById('time_text').textContent = result.duration_text;
+                document.getElementById('dist_text').textContent = result.distance_km;
+                document.getElementById('rush_text').textContent = result.is_rush_hour ? 'Có 😫' : 'Không 😌';
+                resultBox.classList.add('show');
                 
-                const result = await response.json();
-                
-                if (result.success) {
-                    document.getElementById('duration').textContent = result.duration_text;
-                    document.getElementById('distance').textContent = result.distance_km;
-                    document.getElementById('rushHour').textContent = result.is_rush_hour ? 'Có' : 'Không';
-                    document.getElementById('weekend').textContent = result.is_weekend ? 'Có' : 'Không';
-                    document.getElementById('result').classList.add('show');
-                } else {
-                    document.getElementById('error').textContent = 'Lỗi: ' + result.detail;
-                    document.getElementById('error').classList.add('show');
-                }
-            } catch (error) {
-                document.getElementById('error').textContent = 'Lỗi kết nối: ' + error.message;
-                document.getElementById('error').classList.add('show');
+                var group = new L.featureGroup([pickupMarker, dropoffMarker]);
+                map.fitBounds(group.getBounds().pad(0.2));
+
+            } else {
+                errorBox.textContent = 'Lỗi: ' + result.detail;
+                errorBox.style.display = 'block';
             }
-        });
-    </script>
+        } catch (error) {
+            loading.style.display = 'none';
+            errorBox.textContent = 'Lỗi kết nối: ' + error.message;
+            errorBox.style.display = 'block';
+        }
+    });
+</script>
+
 </body>
 </html>
