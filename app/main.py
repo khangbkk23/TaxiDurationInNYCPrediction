@@ -76,16 +76,35 @@ async def predict(trip: TripInput):
         df = df[ALL_FEATURES]
         raw_debug = df.iloc[0].to_dict()
         try:
-            # Lấy cột cần scale
             df_subset = df[SCALED_FEATURES]
             # Transform
             scaled_values = scaler.transform(df_subset)
-            # Gán ngược lại
             df[SCALED_FEATURES] = scaled_values
         except Exception as e:
             return {"success": False, "detail": f"Lỗi Scaler: {str(e)}"}
 
         scaled_debug = df.values[0].tolist()
+        
+        print("\n" + "="*50)
+        print("🔍 DEBUGGING MODEL INPUT")
+        print("="*50)
+        
+        dist_raw = df['distance_km'].values[0]
+        print(f"Khoảng cách thô (km): {dist_raw}")
+        try:
+            dist_scaled = df['distance_km'].values[0] 
+            print(f"Khoảng cách sau Scale (Z-score): {dist_scaled}")
+            
+            if dist_scaled < -1:
+                print("CẢNH BÁO: Giá trị sau scale bị ÂM quá lớn!")
+                print("   -> Có thể do sai đơn vị (m vs km) hoặc sai Scaler.")
+        except:
+            print("Không tìm thấy cột distance_km trong df final")
+
+        print("\n Dữ liệu đưa vào model (List 21 cột):")
+        print(df.values[0])
+        print("="*50 + "\n")
+        
         log_pred = model.predict(df)[0]
         seconds = np.expm1(log_pred)
         
