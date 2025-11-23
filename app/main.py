@@ -6,12 +6,13 @@ import pickle
 import numpy as np
 import pandas as pd
 from pathlib import Path
-import sys
 import os
+import sys
 
+# Thêm đường dẫn src để import (phòng trường hợp lỗi path)
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from src.preprocessing import preprocess_data
 
+# --- 1. CẤU HÌNH CỘT ---
 ALL_FEATURES = [
     'vendor_id', 'passenger_count', 'pickup_longitude', 'pickup_latitude',
     'dropoff_longitude', 'dropoff_latitude', 'store_and_fwd_flag',
@@ -30,19 +31,64 @@ SCALED_FEATURES = [
     'center_latitude', 'center_longitude'
 ]
 
+# --- 2. HÀM TÍNH TOÁN ---
+def haversine_array(lat1, lon1, lat2, lon2):
+    R = 6378.137
+    lat1, lon1, lat2, lon2 = map(np.radians, [lat1, lon1, lat2, lon2])
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+    a = np.sin(dlat/2)**2 + np.cos(lat1)*np.cos(lat2)*np.sin(dlon/2)**2
+    c = 2 * np.arcsin(np.sqrt(a))
+    return R * c
+
+def transform_raw_data(data_dict):
+    df = pd.DataFrame([data_dict])
+    
+    # Thời gian
+    df['pickup_datetime'] = pd.to_datetime(df['pickup_datetime'])
+    df['pickup_year'] = df['pickup_datetime'].dt.year
+    df['pickup_month'] = df['pickup_datetime'].dt.month
+    df['pickup_day'] = df['pickup_datetime'].dt.day
+    df['pickup_hour'] = df['pickup_datetime'].dt.hour
+    df['pickup_minute'] = df['pickup_datetime'].dt.minute
+    df['pickup_weekday'] = df['pickup_datetime'].dt.weekday
+    df['pickup_yday'] = df['pickup_datetime'].dt.dayofyear
+    
+    # Logic
+    df['pickup_weekend'] = (df['pickup_weekday'] >= 5).astype(int)
+    df['is_rush_hour'] = (((df['pickup_hour'] >= 7) & (df['pickup_hour'] <= 9)) |
+                          ((df['pickup_hour'] >= 17) & (df['pickup_hour'] <= 19))).astype(int)
+    df['is_night'] = ((df['pickup_hour'] >= 22) | (df['pickup_hour'] <= 5)).astype(int)
+    
+    # Không gian
+    df['distance_km'] = haversine_array(
+        df['pickup_latitude'], df['pickup_longitude'],
+        df['dropoff_latitude'], df['dropoff_longitude']
+    )
+    
+    dlon = df['dropoff_longitude'] - df['pickup_longitude']
+    dlat = df['dropoff_latitude'] - df['pickup_latitude']
+    df['direction'] = np.degrees(np.arctan2(dlat, dlon))
+    
+    df['center_latitude'] = (df['pickup_latitude'] + df['dropoff_latitude']) / 2
+    df['center_longitude'] = (df['pickup_longitude'] + df['dropoff_longitude']) / 2
+    
+    # Flag
+    df['store_and_fwd_flag'] = 1 if data_dict.get('store_and_fwd_flag') == 'Y' else 0
+    
+    return df
+
+# --- 3. APP & ARTIFACTS ---
 app = FastAPI()
 
-print("Loading artifacts...")
 try:
-    with open('artifacts/best_model.pkl', 'rb') as f:
+    with open('artifacts/model.pkl', 'rb') as f:
         model = pickle.load(f)
     with open('artifacts/scaler.pkl', 'rb') as f:
         scaler = pickle.load(f)
-    print("Đã load Model và Scaler thành công!")
-except Exception as e:
-    print(f"Lỗi load artifacts: {e}")
-    model = None
-    scaler = None
+    print("✅ Đã load Model & Scaler!")
+except:
+    print("❌ Lỗi: Chưa có artifacts/model.pkl hoặc artifacts/scaler.pkl")
 
 class TripInput(BaseModel):
     vendor_id: int
@@ -57,71 +103,60 @@ class TripInput(BaseModel):
 @app.get("/", response_class=HTMLResponse)
 async def home():
     p = Path("app/templates/index.html")
-    return p.read_text(encoding="utf-8") if p.exists() else "<h1>File not found</h1>"
+    return p.read_text(encoding="utf-8") if p.exists() else "Error"
 
 @app.post("/predict")
 async def predict(trip: TripInput):
-    if not model or not scaler:
-        return {"success": False, "detail": "Model chưa được load"}
-
     try:
-        data_dict = trip.dict()
-        df_input = pd.DataFrame([data_dict])
+        # 1. Feature Engineering
+        df = transform_raw_data(trip.dict())
         
-        df = preprocess_data(df_input, is_train=False)
+        # 2. Fill missing cols = 0
         for col in ALL_FEATURES:
             if col not in df.columns:
                 df[col] = 0
         
-        df = df[ALL_FEATURES]
-        raw_debug = df.iloc[0].to_dict()
+        # 3. Sắp xếp cột & Tạo bản sao (FIX LỖI WARNING Ở ĐÂY)
+        df_final = df[ALL_FEATURES].copy()
+        
+        # In ra khoảng cách thô để kiểm tra
+        raw_dist = df_final['distance_km'].values[0]
+        print(f"\n📏 Khoảng cách tính toán (Raw): {raw_dist:.4f} km")
+
+        # 4. Scaling
         try:
-            df_subset = df[SCALED_FEATURES]
-            # Transform
+            df_subset = df_final[SCALED_FEATURES]
             scaled_values = scaler.transform(df_subset)
-            df[SCALED_FEATURES] = scaled_values
+            df_final[SCALED_FEATURES] = scaled_values
         except Exception as e:
-            return {"success": False, "detail": f"Lỗi Scaler: {str(e)}"}
-
-        scaled_debug = df.values[0].tolist()
+            return {"success": False, "detail": f"Lỗi Scaler: {e}"}
         
-        print("\n" + "="*50)
-        print("🔍 DEBUGGING MODEL INPUT")
-        print("="*50)
+        print(f"🔍 CHI TIẾT DỮ LIỆU ĐẦU VÀO MODEL ({len(df_final.columns)} cột)")
+        print(f"{'index':<5} | {'feature name':<25} | {'value(scaled)'}")
+        print("-" * 50)
+        row_values = df_final.iloc[0]
         
-        dist_raw = df['distance_km'].values[0]
-        print(f"Khoảng cách thô (km): {dist_raw}")
-        try:
-            dist_scaled = df['distance_km'].values[0] 
-            print(f"Khoảng cách sau Scale (Z-score): {dist_scaled}")
+        for i, col_name in enumerate(df_final.columns):
+            val = row_values[col_name]
+            val_str = f"{val:.4f}" if isinstance(val, (int, float)) else str(val)
+            print(f"{i:<5} | {col_name:<25} | {val_str}")
             
-            if dist_scaled < -1:
-                print("CẢNH BÁO: Giá trị sau scale bị ÂM quá lớn!")
-                print("   -> Có thể do sai đơn vị (m vs km) hoặc sai Scaler.")
-        except:
-            print("Không tìm thấy cột distance_km trong df final")
-
-        print("\n Dữ liệu đưa vào model (List 21 cột):")
-        print(df.values[0])
         print("="*50 + "\n")
-        
-        log_pred = model.predict(df)[0]
+        # ----------------------------------------------------
+
+        # 5. Dự đoán
+        log_pred = model.predict(df_final)[0]
         seconds = np.expm1(log_pred)
         
         if seconds < 0: seconds = 0
         mins = int(seconds // 60)
         secs = int(seconds % 60)
-
+        
         return {
             "success": True,
             "duration_text": f"{mins} phút {secs} giây",
-            "distance_km": round(float(df['distance_km'].values[0]), 2),
-            "is_rush_hour": bool(raw_debug.get('is_rush_hour', False)),
-            "debug_info": {
-                "raw_features": raw_debug,
-                "scaled_features": scaled_debug,
-                "model_input_order": ALL_FEATURES
-            }
+            "distance_km": round(float(raw_dist), 2),
+            "is_rush_hour": bool(df['is_rush_hour'].values[0])
         }
 
     except Exception as e:
