@@ -74,9 +74,9 @@ try:
         model = pickle.load(f)
     with open('artifacts/scaler.pkl', 'rb') as f:
         scaler = pickle.load(f)
-    print("Đã load Model & Scaler!")
+    print("Tải lên thư mục lưu trữ thành công")
 except Exception as e:
-    print("Lỗi: Chưa có artifacts/model.pkl hoặc artifacts/scaler.pkl")
+    print("Lỗi: Tải lên thư mục lưu trữ không thành công")
     print(e)
 
 class TripInput(BaseModel):
@@ -112,9 +112,8 @@ async def predict(trip: TripInput):
             df_final[SCALED_FEATURES] = scaled_values
         except Exception as e:
             return {"success": False, "detail": f"Lỗi Scaler: {e}"}
-        print(f"🔍 CHI TIẾT DỮ LIỆU ĐẦU VÀO MODEL ({len(df_final.columns)} cột)")
+        print(f"Chi tiết dữ liệu đầu vào: ({len(df_final.columns)} cột)")
         print(f"{'index':<5} | {'feature name':<25} | {'value(scaled)'}")
-        print("-" * 50)
         row_values = df_final.iloc[0]
         for i, col_name in enumerate(df_final.columns):
             val = row_values[col_name]
