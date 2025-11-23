@@ -40,7 +40,12 @@
             padding: 6px 10px; border-radius: 999px; background: #e0f2fe;
             font-size: 11px; color: #0369a1; font-weight: 600;
         }
-
+        img.huechange-red { 
+            filter: hue-rotate(140deg) brightness(0.9) saturate(1.5); 
+        }
+        img.huechange-green { 
+            filter: hue-rotate(-100deg) brightness(1.1) saturate(1.5); 
+        }
         .container {
             display: flex; width: 100%; background: white;
             border-radius: 18px; box-shadow: 0 24px 40px rgba(15, 23, 42, 0.12);
@@ -123,8 +128,8 @@
         <div class="app-title">
             <div class="app-logo">🚖</div>
             <div class="app-title-text">
-                <h1>Taxi Duration Prediction</h1>
-                <p>Dự báo thời gian di chuyển dựa trên ML Model (Trained on 2016 Data)</p>
+                <h1>Taxi Trip Duration In NYC Prediction System</h1>
+                <p>Dự báo thời gian di chuyển dựa trên mô hình học máy và dữ liệu từ NYC Taxi and Limousine Commission (2016)</p>
             </div>
         </div>
         <div class="badge"><span>✨ Model v1.0</span></div>
@@ -185,8 +190,8 @@
                     </div>
                 </div>
 
-                <button type="submit"><span>🚀 Dự đoán ngay</span></button>
-                <div id="loading" class="loading-text">⏳ Đang tính toán...</div>
+                <button type="submit"><span>Dự đoán</span></button>
+                <div id="loading" class="loading-text">Đang tính toán...</div>
             </form>
             
             <div class="result-box" id="result">
@@ -196,8 +201,8 @@
                 </div>
                 <div class="result-main" id="time_text">-- phút</div>
                 <div class="result-meta">
-                    <span>📏 <strong id="dist_text">--</strong> km</span>
-                    <span>🚦 Cao điểm: <strong id="rush_text">--</strong></span>
+                    <span><strong id="dist_text">--</strong> km</span>
+                    <span>Cao điểm: <strong id="rush_text">--</strong></span>
                 </div>
             </div>
 
@@ -216,6 +221,8 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
     const NYC_CENTER = [40.7580, -73.9855];
     const map = L.map('map', { zoomControl: true }).setView(NYC_CENTER, 13);
@@ -228,24 +235,23 @@
     const pLonIn = document.getElementById('p_lon');
     const dLatIn = document.getElementById('d_lat');
     const dLonIn = document.getElementById('d_lon');
-    
-    const pickupIcon = new L.Icon({
-        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/markers/marker-icon-2x-green.png',
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-        iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
-    });
+    const greenIcon = new L.Icon.Default();
+    greenIcon.options.className = 'huechange-green';
 
-    const dropoffIcon = new L.Icon({
-        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/markers/marker-icon-2x-red.png',
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-        iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
-    });
+    const redIcon = new L.Icon.Default();
+    redIcon.options.className = 'huechange-red';
+    const pickupMarker = L.marker([pLatIn.value, pLonIn.value], { 
+        icon: greenIcon, 
+        draggable: true 
+    }).addTo(map);
 
-    const pickupMarker = L.marker([pLatIn.value, pLonIn.value], { icon: pickupIcon, draggable: true }).addTo(map);
-    const dropoffMarker = L.marker([dLatIn.value, dLonIn.value], { icon: dropoffIcon, draggable: true }).addTo(map);
+    const dropoffMarker = L.marker([dLatIn.value, dLonIn.value], { 
+        icon: redIcon, 
+        draggable: true 
+    }).addTo(map);
 
-    pickupMarker.bindPopup("Điểm đón").openPopup();
-    dropoffMarker.bindPopup("Điểm trả");
+    pickupMarker.bindPopup("<b>📍 Điểm Đón</b> (Kéo tôi!)").openPopup();
+    dropoffMarker.bindPopup("<b>🏁 Điểm Trả</b> (Kéo tôi!)");
 
     function updateInputsFromMarker() {
         const pPos = pickupMarker.getLatLng();
@@ -275,10 +281,12 @@
     const initialGroup = new L.featureGroup([pickupMarker, dropoffMarker]);
     map.fitBounds(initialGroup.getBounds().pad(0.25));
 
+    // Set default time
     const now = new Date();
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
     document.querySelector('input[name="pickup_datetime"]').value = now.toISOString().slice(0, 16);
 
+    // --- XỬ LÝ SUBMIT FORM ---
     document.getElementById('predictionForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -295,13 +303,15 @@
         loading.style.display = 'block';
 
         const formData = new FormData(e.target);
+        
+        // Logic ép năm 2016
         const rawDate = formData.get('pickup_datetime'); 
         const timePart = rawDate.substring(4); 
         const fixedDate = "2016" + timePart + ":00";
-
+        
         const data = {
             vendor_id: parseInt(formData.get('vendor_id')),
-            pickup_datetime: fixedDate.replace('T', ' '), // "2016-11-23 14:30:00"
+            pickup_datetime: fixedDate.replace('T', ' '),
             passenger_count: parseInt(formData.get('passenger_count')),
             pickup_longitude: parseFloat(formData.get('pickup_longitude')),
             pickup_latitude: parseFloat(formData.get('pickup_latitude')),

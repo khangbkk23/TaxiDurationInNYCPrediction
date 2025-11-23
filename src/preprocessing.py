@@ -1,131 +1,116 @@
-import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-features = [
-    'vendor_id', 'passenger_count', 
-    'pickup_longitude', 'pickup_latitude', 
-    'dropoff_longitude', 'dropoff_latitude', 
-    'store_and_fwd_flag', 'pickup_month', 'pickup_day', 'pickup_hour', 
-    'pickup_minute', 'pickup_weekday', 'pickup_yday', 'pickup_weekend',
-    'is_rush_hour', 'is_night', 
-    'distance_km', 'direction', 
-    'center_latitude', 'center_longitude'
-]
-
-numerical_cols = [
-    'vendor_id', 'passenger_count',
-    'pickup_longitude', 'pickup_latitude',
-    'dropoff_longitude', 'dropoff_latitude',
-    'pickup_hour', 'pickup_weekday', 'pickup_month',
-    'distance_km', 'direction',
-    'center_latitude', 'center_longitude'
-]
+import pandas as pd
+from datetime import datetime
 
 def haversine_distance(lat1, lon1, lat2, lon2):
-    R = 6378.137 # Earth radius in kilometres
+    """Tính khoảng cách Haversine"""
+    R = 6378.137
     lat1, lon1, lat2, lon2 = map(np.radians, [lat1, lon1, lat2, lon2])
     dlat = lat2 - lat1
     dlon = lon2 - lon1
-    a = np.sin(dlat / 2.0)**2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon / 2.0)**2
-    return R * (2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a)))
+    a = np.sin(dlat/2)**2 + np.cos(lat1)*np.cos(lat2)*np.sin(dlon/2)**2
+    return R * (2 * np.arctan2(np.sqrt(a), np.sqrt(1-a)))
 
-def feature_engineering(df):
-    df = df.copy()
-
-    # Time
-    pickup_datetime = pd.to_datetime(df['pickup_datetime'])
-    df['pickup_year'] = pickup_datetime.dt.year
-    df['pickup_month'] = pickup_datetime.dt.month
-    df['pickup_day'] = pickup_datetime.dt.day
-    df['pickup_hour'] = pickup_datetime.dt.hour
-    df['pickup_minute'] = pickup_datetime.dt.minute
-    df['pickup_weekday'] = pickup_datetime.dt.weekday
-    df['pickup_yday'] = pickup_datetime.dt.dayofyear
-    df['pickup_weekend'] = (pickup_datetime.dt.weekday >= 5).astype(int)
-
-    # Time category
-    df['is_rush_hour'] = (((df['pickup_hour'] >= 7) & (df['pickup_hour'] <= 9)) |
-                          ((df['pickup_hour'] >= 17) & (df['pickup_hour'] <= 19))).astype(int)
-    df['is_night'] = ((df['pickup_hour'] >= 22) | (df['pickup_hour'] <= 5)).astype(int)
-
-    # Calculate the distance with Haversine fomula
-    df['distance_km'] = haversine_distance(
-        df['pickup_latitude'], df['pickup_longitude'],
-        df['dropoff_latitude'], df['dropoff_longitude']
-    )
-
-    df['direction'] = np.degrees(np.arctan2(
-        (df['dropoff_latitude'] - df['pickup_latitude']),
-        (df['dropoff_longitude'] - df['pickup_longitude'])
-    ))
-
-    # Center coordinates
-    df['center_latitude'] = (df['pickup_latitude'] + df['dropoff_latitude']) / 2
-    df['center_longitude'] = (df['pickup_longitude'] + df['dropoff_longitude']) / 2
-
-    # Binary categorical
-    df['store_and_fwd_flag'] = (df['store_and_fwd_flag'] == 'Y').astype(int)
-
-    return df
-
-def clean_data(df):
-    df = df.copy()
-
-    print(f"Initial shape: {df.shape}")
-
-    if 'trip_duration' in df.columns:
-        df = df[(df['trip_duration'] > 30) & (df['trip_duration'] < 3600 * 6)]
-        print(f"After duration filter: {df.shape}")
-
-    # Remove zero-distance trips
-    df = df[df['distance_km'] > 0]
-    print(f"After distance filter: {df.shape}")
-
-    # Geographic bounding box
-    bounds = {'min_lat': 40.5, 'max_lat': 41.0, 'min_lon': -74.3, 'max_lon': -73.7}
-    df = df[
-        (df['pickup_latitude'].between(bounds['min_lat'], bounds['max_lat'])) &
-        (df['pickup_longitude'].between(bounds['min_lon'], bounds['max_lon'])) &
-        (df['dropoff_latitude'].between(bounds['min_lat'], bounds['max_lat'])) &
-        (df['dropoff_longitude'].between(bounds['min_lon'], bounds['max_lon']))
-    ]
-
-    print(f"After geographic filter: {df.shape}")
-    return df
-
-def preprocessing(df: pd.DataFrame, scale=True, random_state=42) -> tuple:
+def feature_engineering(data):
+    """
+    Feature engineering - TẠO ĐÚNG 20 FEATURES (KHÔNG CÓ pickup_year)
     
-    # Geospatial feature engineering
-    df = feature_engineering(df)
-    
-    # Data cleaning
-    df = clean_data(df)
-
-    # Target transformation
-    y = None
-    if 'trip_duration' in df.columns:
-        y = np.log1p(df['trip_duration'])
-
-    X = df[features].copy()
-    if y is not None:
-        X_train, X_temp, y_train, y_temp = train_test_split(X, y, test_size=0.2, random_state=random_state)
-        X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=random_state)
+    OUTPUT (20 features theo thứ tự):
+        0. vendor_id
+        1. passenger_count
+        2. pickup_longitude
+        3. pickup_latitude
+        4. dropoff_longitude
+        5. dropoff_latitude
+        6. store_and_fwd_flag
+        7. pickup_month
+        8. pickup_day
+        9. pickup_hour
+        10. pickup_minute
+        11. pickup_weekday
+        12. pickup_yday
+        13. pickup_weekend
+        14. is_rush_hour
+        15. is_night
+        16. distance_km
+        17. direction
+        18. center_latitude
+        19. center_longitude
+    """
+    # Convert to DataFrame nếu là dict
+    if isinstance(data, dict):
+        df = pd.DataFrame([data])
     else:
-        return X, None, None, None, None, None, None
-
-    # Feature scaling
-    scaler = None
-    if scale:
-        # Only scale columns that exist
-        scaler = StandardScaler()
-        valid_cols = [c for c in numerical_cols if c in X_train.columns]
-        
-        X_train[valid_cols] = scaler.fit_transform(X_train[valid_cols])
-        X_val[valid_cols] = scaler.transform(X_val[valid_cols])
-        X_test[valid_cols] = scaler.transform(X_test[valid_cols])
-
-    print("Preprocessing completed.")
-    print(f"Features used: {len(features)}")
-
-    return X_train, X_val, X_test, y_train, y_val, y_test, scaler
+        df = data.copy()
+    
+    # Parse datetime string thành datetime object
+    pickup_datetime = pd.to_datetime(df['pickup_datetime'].iloc[0])
+    
+    # Time features (KHÔNG CÓ pickup_year)
+    df['pickup_month'] = pickup_datetime.month
+    df['pickup_day'] = pickup_datetime.day
+    df['pickup_hour'] = pickup_datetime.hour
+    df['pickup_minute'] = pickup_datetime.minute
+    df['pickup_weekday'] = pickup_datetime.weekday()
+    df['pickup_yday'] = pickup_datetime.timetuple().tm_yday
+    df['pickup_weekend'] = 1 if pickup_datetime.weekday() >= 5 else 0
+    
+    # Time categories
+    hour = pickup_datetime.hour
+    df['is_rush_hour'] = 1 if ((hour >= 7 and hour <= 9) or (hour >= 17 and hour <= 19)) else 0
+    df['is_night'] = 1 if (hour >= 22 or hour <= 5) else 0
+    
+    # Spatial features - lấy giá trị đầu tiên
+    pickup_lat = df['pickup_latitude'].iloc[0]
+    pickup_lon = df['pickup_longitude'].iloc[0]
+    dropoff_lat = df['dropoff_latitude'].iloc[0]
+    dropoff_lon = df['dropoff_longitude'].iloc[0]
+    
+    df['distance_km'] = haversine_distance(pickup_lat, pickup_lon, dropoff_lat, dropoff_lon)
+    
+    df['direction'] = np.degrees(np.arctan2(
+        dropoff_lat - pickup_lat,
+        dropoff_lon - pickup_lon
+    ))
+    
+    df['center_latitude'] = (pickup_lat + dropoff_lat) / 2
+    df['center_longitude'] = (pickup_lon + dropoff_lon) / 2
+    
+    # Binary flag
+    if 'store_and_fwd_flag' in df.columns:
+        df['store_and_fwd_flag'] = 1 if df['store_and_fwd_flag'].iloc[0] == 'Y' else 0
+    else:
+        df['store_and_fwd_flag'] = 0
+    
+    # Drop datetime
+    if 'pickup_datetime' in df.columns:
+        df = df.drop(columns=['pickup_datetime'])
+    
+    # Sắp xếp lại theo đúng thứ tự 20 cột
+    ordered_columns = [
+        'vendor_id',
+        'passenger_count',
+        'pickup_longitude',
+        'pickup_latitude',
+        'dropoff_longitude',
+        'dropoff_latitude',
+        'store_and_fwd_flag',
+        'pickup_month',
+        'pickup_day',
+        'pickup_hour',
+        'pickup_minute',
+        'pickup_weekday',
+        'pickup_yday',
+        'pickup_weekend',
+        'is_rush_hour',
+        'is_night',
+        'distance_km',
+        'direction',
+        'center_latitude',
+        'center_longitude'
+    ]
+    
+    # Đảm bảo có đủ và đúng thứ tự
+    df = df[ordered_columns]
+    
+    return df

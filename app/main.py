@@ -22,14 +22,7 @@ ALL_FEATURES = [
     'center_latitude', 'center_longitude'
 ]
 
-SCALED_FEATURES = [
-    'vendor_id', 'passenger_count',
-    'pickup_longitude', 'pickup_latitude',
-    'dropoff_longitude', 'dropoff_latitude',
-    'pickup_hour', 'pickup_weekday', 'pickup_month',
-    'distance_km', 'direction',
-    'center_latitude', 'center_longitude'
-]
+SCALED_FEATURES = ['vendor_id', 'passenger_count', 'pickup_longitude', 'pickup_latitude', 'dropoff_longitude', 'dropoff_latitude', 'pickup_hour', 'pickup_weekday', 'pickup_month', 'distance_km', 'direction', 'center_latitude', 'center_longitude']
 
 
 def haversine_array(lat1, lon1, lat2, lon2):
@@ -81,7 +74,7 @@ try:
         model = pickle.load(f)
     with open('artifacts/scaler.pkl', 'rb') as f:
         scaler = pickle.load(f)
-    print("✅ Đã load Model & Scaler!")
+    print("Đã load Model & Scaler!")
 except Exception as e:
     print("Lỗi: Chưa có artifacts/model.pkl hoặc artifacts/scaler.pkl")
     print(e)
