@@ -70,11 +70,14 @@ def transform_raw_data(data_dict):
 app = FastAPI()
 
 try:
-    with open('artifacts/model.pkl', 'rb') as f:
+    BASE_DIR = Path(__file__).resolve().parent.parent
+    ARTIFACT_DIR = BASE_DIR / "artifacts"
+
+    with open(ARTIFACT_DIR / "model.pkl", "rb") as f:
         model = pickle.load(f)
-    with open('artifacts/scaler.pkl', 'rb') as f:
+
+    with open(ARTIFACT_DIR / "scaler.pkl", "rb") as f:
         scaler = pickle.load(f)
-    print("Đã load Model & Scaler!")
 except Exception as e:
     print("Lỗi: Chưa có artifacts/model.pkl hoặc artifacts/scaler.pkl")
     print(e)
@@ -103,16 +106,26 @@ async def predict(trip: TripInput):
                 df[col] = 0
 
         df_final = df[ALL_FEATURES].copy()
+        print("\n" + "="*60)
+        print(f"📊 CHI TIẾT DỮ LIỆU THÔ (RAW DATA - BEFORE SCALING)")
+        print("="*60)
+        print(f"{'INDEX':<5} | {'FEATURE NAME':<25} | {'RAW VALUE'}")
+        print("-" * 60)
+        row_values = df_final.iloc[0]
+        for i, col_name in enumerate(df_final.columns):
+            val = row_values[col_name]
+            print(f"{i:<5} | {col_name:<25} | {val}")
+        print("="*60 + "\n")
         
         raw_dist = df_final['distance_km'].values[0]
-        print(f"\nKhoảng cách tính toán (Raw): {raw_dist:.4f} km")
+        print(f"\nKhoảng cách tính toán: {raw_dist:.4f} km")
         try:
             df_subset = df_final[SCALED_FEATURES]
             scaled_values = scaler.transform(df_subset)
             df_final[SCALED_FEATURES] = scaled_values
         except Exception as e:
             return {"success": False, "detail": f"Lỗi Scaler: {e}"}
-        print(f"🔍 CHI TIẾT DỮ LIỆU ĐẦU VÀO MODEL ({len(df_final.columns)} cột)")
+        print(f" CHI TIẾT DỮ LIỆU ĐẦU VÀO MODEL ({len(df_final.columns)} cột)")
         print(f"{'index':<5} | {'feature name':<25} | {'value(scaled)'}")
         print("-" * 50)
         row_values = df_final.iloc[0]
@@ -124,7 +137,11 @@ async def predict(trip: TripInput):
 
         log_pred = model.predict(df_final)[0]
         seconds = float(np.expm1(log_pred))
-        
+        print("=== DEBUG PREDICTION ===")
+        print(f"log_pred (API)    : {log_pred}")
+        print(f"seconds (API)     : {seconds}")
+        print(f"duration_text(API): {int(seconds // 60)} phút {int(seconds % 60)} giây")
+        print("====================================")
         if seconds < 0:
             seconds = 0.0
         mins = int(seconds // 60)

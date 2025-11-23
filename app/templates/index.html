@@ -221,8 +221,6 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
 <script>
     const NYC_CENTER = [40.7580, -73.9855];
     const map = L.map('map', { zoomControl: true }).setView(NYC_CENTER, 13);
@@ -303,11 +301,13 @@
         loading.style.display = 'block';
 
         const formData = new FormData(e.target);
-        
-        // Logic ép năm 2016
-        const rawDate = formData.get('pickup_datetime'); 
-        const timePart = rawDate.substring(4); 
-        const fixedDate = "2016" + timePart + ":00";
+        const rawDateStr = formData.get('pickup_datetime');
+        const dateObj = new Date(rawDateStr);
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        const hours = String(dateObj.getHours()).padStart(2, '0');
+        const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+        const fixedDate = `2016-${month}-${day} ${hours}:${minutes}:00`;
         
         const data = {
             vendor_id: parseInt(formData.get('vendor_id')),
@@ -355,6 +355,6 @@
         }
     });
 </script>
-
+ 
 </body>
 </html>

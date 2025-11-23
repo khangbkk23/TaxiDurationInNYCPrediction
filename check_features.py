@@ -1,18 +1,9 @@
-"""
-Script kiểm tra feature engineering có tạo đúng 20 cột không
-"""
 import pickle
 import pandas as pd
 import numpy as np
 from src.preprocessing import feature_engineering
 
-print("="*70)
-print("KIỂM TRA CHI TIẾT FEATURE ENGINEERING")
-print("="*70)
-
-# 1. Load artifacts
 print("\n1️⃣  LOAD MODEL ARTIFACTS")
-print("-"*70)
 with open('artifacts/features.pkl', 'rb') as f:
     feature_names = pickle.load(f)
 
@@ -22,21 +13,19 @@ with open('artifacts/scaler.pkl', 'rb') as f:
 with open('artifacts/model.pkl', 'rb') as f:
     model = pickle.load(f)
 
-print(f"✓ Model type: {type(model).__name__}")
-print(f"✓ Feature names: {len(feature_names)} columns")
+print(f"Model type: {type(model).__name__}")
+print(f"Feature names: {len(feature_names)} columns")
 
 # 2. Kiểm tra scaler
 print("\n2️⃣  KIỂM TRA SCALER")
-print("-"*70)
 if hasattr(scaler, 'mean_'):
-    print(f"✓ Scaler đã được fit")
-    print(f"✓ Number of features in scaler: {len(scaler.mean_)}")
+    print(f"Scaler đã được fit")
+    print(f"Number of features in scaler: {len(scaler.mean_)}")
 else:
     print("⚠️  Scaler chưa được fit hoặc không phải StandardScaler")
 
 # 3. Test với dữ liệu mẫu
 print("\n3️⃣  TEST VỚI DỮ LIỆU MẪU (từ web form)")
-print("-"*70)
 sample_data = {
     "vendor_id": 2,
     "pickup_datetime": "2016-06-15 10:30:00",
@@ -54,7 +43,6 @@ for key, val in sample_data.items():
 
 # 4. Feature engineering
 print("\n4️⃣  CHẠY FEATURE ENGINEERING")
-print("-"*70)
 df = feature_engineering(sample_data)
 
 print(f"Output: {len(df.columns)} columns")
@@ -66,11 +54,10 @@ for i, col in enumerate(df.columns):
 
 # 5. So sánh với feature_names
 print("\n5️⃣  SO SÁNH VỚI MODEL")
-print("-"*70)
 if list(df.columns) == feature_names:
-    print("✅ Thứ tự columns CHÍNH XÁC!")
+    print("Thứ tự columns CHÍNH XÁC!")
 else:
-    print("❌ Thứ tự columns SAI!")
+    print("Thứ tự columns SAI!")
     print("\nExpected:")
     for i, col in enumerate(feature_names):
         print(f"  [{i:2d}] {col}")
@@ -80,16 +67,12 @@ else:
 
 # 6. Scaling
 print("\n6️⃣  SCALING")
-print("-"*70)
 
-# Các cột cần scale
 NUMERICAL_COLS = ['vendor_id', 'passenger_count', 'pickup_longitude', 'pickup_latitude', 'dropoff_longitude', 'dropoff_latitude', 'pickup_hour', 'pickup_weekday', 'pickup_month', 'distance_km', 'direction', 'center_latitude', 'center_longitude']
 
 print(f"Sẽ scale {len(NUMERICAL_COLS)} cột:")
 for col in NUMERICAL_COLS:
     print(f"  - {col}")
-
-# Scale
 df_scaled = df.copy()
 df_scaled[NUMERICAL_COLS] = scaler.transform(df[NUMERICAL_COLS])
 
@@ -102,15 +85,13 @@ for i, col in enumerate(df.columns):
     scaled = df_scaled[col].values[0]
     print(f"{i:<6} {col:<22} {original:<12.4f} {scaled:<12.4f}")
 
-# 7. Prediction
 print("\n7️⃣  PREDICTION")
-print("-"*70)
 try:
     log_pred = model.predict(df_scaled)[0]
     duration_seconds = np.expm1(log_pred)
     duration_minutes = duration_seconds / 60
     
-    print(f"✅ PREDICTION SUCCESS!")
+    print(f"PREDICTION SUCCESS!")
     print(f"\nKết quả:")
     print(f"  Log prediction    : {log_pred:.4f}")
     print(f"  Duration (seconds): {duration_seconds:.2f}")
@@ -119,7 +100,7 @@ try:
     print(f"  Distance (km)     : {df['distance_km'].values[0]:.2f}")
     
 except Exception as e:
-    print(f"❌ PREDICTION FAILED!")
+    print(f"PREDICTION FAILED!")
     print(f"Error: {str(e)}")
     import traceback
     traceback.print_exc()
