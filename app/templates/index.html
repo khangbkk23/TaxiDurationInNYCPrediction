@@ -12,327 +12,108 @@
         :root {
             --primary: #2563eb;
             --primary-dark: #1d4ed8;
-            --accent: #0d9488;
-            --danger: #ef4444;
-            --bg: #f3f4f6;
-            --border: #e5e7eb;
-            --text-main: #111827;
             --text-muted: #6b7280;
         }
         body {
-            font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             background: radial-gradient(circle at top left, #e0f2fe, #f3f4f6);
             padding: 20px;
             display: flex;
             justify-content: center;
             min-height: 100vh;
-            color: var(--text-main);
+            color: #111827;
         }
-        .page-wrapper {
-            width: 100%;
-            max-width: 1200px;
-        }
+        .page-wrapper { width: 100%; max-width: 1200px; }
 
         .app-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 18px;
-            gap: 12px;
-        }
-        .app-title {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 18px; gap: 12px;
         }
         .app-logo {
-            width: 36px;
-            height: 36px;
-            border-radius: 12px;
+            width: 36px; height: 36px; border-radius: 12px;
             background: linear-gradient(135deg, #fbbf24, #f97316);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #111827;
-            font-size: 20px;
+            display: flex; align-items: center; justify-content: center; font-size: 20px;
         }
-        .app-title-text h1 {
-            font-size: 20px;
-            font-weight: 700;
-        }
-        .app-title-text p {
-            font-size: 12px;
-            color: var(--text-muted);
-        }
+        .app-title-text h1 { font-size: 20px; font-weight: 700; }
+        .app-title-text p { font-size: 12px; color: var(--text-muted); }
         .badge {
-            padding: 6px 10px;
-            border-radius: 999px;
-            background: #e0f2fe;
-            font-size: 11px;
-            color: #0369a1;
-            font-weight: 600;
-            display: inline-flex;
-            gap: 6px;
-            align-items: center;
+            padding: 6px 10px; border-radius: 999px; background: #e0f2fe;
+            font-size: 11px; color: #0369a1; font-weight: 600;
         }
 
         .container {
-            display: flex;
-            width: 100%;
-            background: white;
-            border-radius: 18px;
-            box-shadow: 0 24px 40px rgba(15, 23, 42, 0.12);
-            overflow: hidden;
-            flex-direction: column;
+            display: flex; width: 100%; background: white;
+            border-radius: 18px; box-shadow: 0 24px 40px rgba(15, 23, 42, 0.12);
+            overflow: hidden; flex-direction: column;
         }
-        @media (min-width: 900px) {
-            .container { flex-direction: row; min-height: 520px; }
-        }
+        @media (min-width: 900px) { .container { flex-direction: row; min-height: 520px; } }
 
         .form-section {
-            padding: 24px 24px 22px;
-            flex: 1;
-            background: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
-            z-index: 2;
-            overflow-y: auto;
+            padding: 24px; flex: 1; background: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
+            z-index: 2; overflow-y: auto;
         }
+        .map-section { flex: 1.4; min-height: 360px; position: relative; background: #020617; }
+        #map { width: 100%; height: 100%; }
 
-        .map-section {
-            flex: 1.4;
-            min-height: 360px;
-            position: relative;
-            background: #020617;
-        }
-        #map {
-            width: 100%;
-            height: 100%;
-        }
-
-        h2.section-title { 
-            font-size: 18px; 
-            margin-bottom: 4px; 
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        h2.section-title span.icon {
-            font-size: 20px;
-        }
-
-        .subtitle {
-            font-size: 12px; 
-            color: var(--text-muted); 
-            margin-bottom: 16px;
-        }
-
-        .pill-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 14px;
-        }
+        h2.section-title { font-size: 18px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+        .subtitle { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; }
+        
+        .pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
         .pill {
-            font-size: 11px;
-            padding: 5px 10px;
-            border-radius: 999px;
-            border: 1px solid var(--border);
-            background: #f9fafb;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            color: #4b5563;
+            font-size: 11px; padding: 5px 10px; border-radius: 999px;
+            border: 1px solid #e5e7eb; background: #f9fafb; color: #4b5563;
         }
 
         .form-group { margin-bottom: 12px; }
-        label { 
-            display: block; 
-            margin-bottom: 5px; 
-            font-weight: 600; 
-            color: #374151; 
-            font-size: 0.8rem;
-        }
+        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.8rem; color: #374151; }
         input, select {
-            width: 100%; padding: 9px 10px;
-            border: 1px solid #d1d5db; border-radius: 8px;
-            font-size: 13px;
-            background: #f9fafb;
-            transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+            width: 100%; padding: 9px 10px; border: 1px solid #d1d5db; border-radius: 8px;
+            font-size: 13px; background: #f9fafb;
         }
-        input:focus, select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 1px rgba(37,99,235,0.2);
-            background: #ffffff;
-        }
-        
         .two-col { display: flex; gap: 10px; }
 
-        .coord-label {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .coord-label span.side-note {
-            font-weight: 400;
-            font-size: 11px;
-            color: var(--text-muted);
-        }
-
+        .coord-label { display: flex; justify-content: space-between; align-items: center; }
         .coord-row { display: flex; gap: 8px; }
         .coord-input { flex: 1; }
-        .coord-input input { 
-            background: #f3f4f6; 
-            border: 1px solid #d1d5db; 
-        }
-
         .coord-tag {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 11px;
-            font-weight: 600;
-            padding: 3px 8px;
-            border-radius: 999px;
+            font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px;
         }
-        .coord-tag.pickup {
-            background: #dcfce7;
-            color: #166534;
-        }
-        .coord-tag.dropoff {
-            background: #fee2e2;
-            color: #b91c1c;
-        }
+        .coord-tag.pickup { background: #dcfce7; color: #166534; }
+        .coord-tag.dropoff { background: #fee2e2; color: #b91c1c; }
 
         button {
-            width: 100%; 
-            padding: 11px;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark)); 
-            color: white;
-            border: none; border-radius: 999px;
-            font-weight: 600; cursor: pointer;
-            margin-top: 10px; 
-            transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.12s;
-            font-size: 14px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            width: 100%; padding: 11px; background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white; border: none; border-radius: 999px; font-weight: 600;
+            cursor: pointer; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 8px;
         }
-        button:hover { 
-            filter: brightness(1.03);
-            box-shadow: 0 10px 18px rgba(37,99,235,0.35);
-            transform: translateY(-1px);
-        }
-        button:active {
-            transform: translateY(0);
-            box-shadow: none;
-        }
+        button:hover { filter: brightness(1.05); }
 
-        .loading-text {
-            display:none; 
-            text-align:center; 
-            margin-top:8px; 
-            font-size: 12px;
-            color: var(--text-muted);
-        }
+        .loading-text { display:none; text-align:center; margin-top:8px; font-size: 12px; color: var(--text-muted); }
 
         .result-box {
-            margin-top: 16px; 
-            padding: 12px 13px;
-            background: #ecfdf5; 
-            border-radius: 12px;
-            border: 1px solid #a7f3d0;
-            display: none;
-            animation: fadeIn 0.35s ease-out;
+            margin-top: 16px; padding: 12px 13px; background: #ecfdf5; border-radius: 12px;
+            border: 1px solid #a7f3d0; display: none; animation: fadeIn 0.35s ease-out;
         }
         .result-box.show { display: block; }
-        .result-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            margin-bottom: 4px;
-        }
-        .result-title {
-            font-size: 13px;
-            font-weight: 700;
-            color: #047857;
-        }
-        .result-chip {
-            font-size: 11px;
-            padding: 3px 8px;
-            border-radius: 999px;
-            background: #d1fae5;
-            color: #065f46;
-        }
-        .result-main {
-            font-size: 1.3em; 
-            font-weight: 700; 
-            margin-bottom: 4px;
-        }
-        .result-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            font-size: 11px;
-            color: #4b5563;
-            margin-top: 6px;
-        }
-        .result-meta span {
-            background: #f9fafb;
-            border-radius: 999px;
-            padding: 4px 8px;
-            border: 1px solid #e5e7eb;
-        }
-
+        .result-title { font-size: 13px; font-weight: 700; color: #047857; }
+        .result-main { font-size: 1.3em; font-weight: 700; margin: 4px 0; }
+        .result-meta { display: flex; flex-wrap: wrap; gap: 8px; font-size: 11px; color: #4b5563; }
+        
         .error-box {
-            margin-top: 14px; 
-            padding: 10px 12px;
-            background: #fef2f2; 
-            border-radius: 12px;
-            border: 1px solid #fecaca; 
-            color: #b91c1c;
-            display: none;
-            font-size: 12px;
+            margin-top: 14px; padding: 10px 12px; background: #fef2f2; border-radius: 12px;
+            border: 1px solid #fecaca; color: #b91c1c; display: none; font-size: 12px;
         }
 
-        .footer-note {
-            margin-top: 10px;
-            font-size: 11px;
-            color: var(--text-muted);
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        @keyframes fadeIn { 
-            from { opacity: 0; transform: translateY(6px); } 
-            to { opacity: 1; transform: translateY(0); } 
-        }
-
-        /* Map overlay label */
         .map-overlay {
-            position: absolute;
-            top: 14px;
-            left: 14px;
-            background: rgba(15,23,42,0.85);
-            color: #e5e7eb;
-            padding: 8px 10px;
-            border-radius: 999px;
-            font-size: 11px;
-            display: inline-flex;
-            gap: 8px;
-            align-items: center;
-            z-index: 500;
-            backdrop-filter: blur(6px);
+            position: absolute; top: 14px; left: 14px; background: rgba(15,23,42,0.85);
+            color: #e5e7eb; padding: 8px 10px; border-radius: 999px; font-size: 11px;
+            display: inline-flex; gap: 8px; align-items: center; z-index: 500;
         }
-        .map-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 999px;
-        }
+        .map-dot { width: 8px; height: 8px; border-radius: 999px; }
         .map-dot.pickup { background: #22c55e; }
         .map-dot.dropoff { background: #f97373; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -342,37 +123,35 @@
         <div class="app-title">
             <div class="app-logo">🚖</div>
             <div class="app-title-text">
-                <h1>Taxi Duration in New York City Prediction</h1>
-                <p>Dự báo thời gian chuyến đi taxi theo thời gian thực, dựa trên dữ liệu lịch sử.</p>
+                <h1>Taxi Duration Prediction</h1>
+                <p>Dự báo thời gian di chuyển dựa trên ML Model (Trained on 2016 Data)</p>
             </div>
         </div>
-        <div class="badge">
-            <span>✨ ML-powered · Interactive Map</span>
-        </div>
+        <div class="badge"><span>✨ Model v1.0</span></div>
     </div>
 
     <div class="container">
         <div class="form-section">
-            <h2 class="section-title">
-                <span class="icon">🧾</span><span>Thông tin chuyến đi</span>
-            </h2>
-            <p class="subtitle">Điền thông tin hoặc kéo ghim trên bản đồ để cập nhật tọa độ tự động.</p>
+            <h2 class="section-title"><span class="icon">🧾</span><span>Thông tin chuyến đi</span></h2>
+            <p class="subtitle">Chọn điểm đi/đến và thời gian dự kiến.</p>
 
             <div class="pill-row">
                 <div class="pill">⏱ Real-time inference</div>
-                <div class="pill">📏 Tính khoảng cách Haversine</div>
-                <div class="pill">🚦 Nhận diện giờ cao điểm</div>
+                <div class="pill">📅 Auto-fix Year 2016</div>
             </div>
 
             <form id="predictionForm">
                 <div class="form-group">
                     <label>Thời gian khởi hành</label>
                     <input type="datetime-local" name="pickup_datetime" required>
+                    <div style="font-size: 10px; color: #ef4444; margin-top: 4px;">
+                        * Lưu ý: Hệ thống sẽ tự động chuyển về năm 2016 để phù hợp với Model.
+                    </div>
                 </div>
 
                 <div class="form-group two-col">
                     <div>
-                        <label>Hãng xe (Vendor)</label>
+                        <label>Hãng xe</label>
                         <select name="vendor_id">
                             <option value="1">Creative Mobile</option>
                             <option value="2" selected>VeriFone</option>
@@ -387,73 +166,48 @@
                 <div class="form-group">
                     <div class="coord-label">
                         <label>📍 Điểm đón (Pickup)</label>
-                        <span class="side-note">
-                            <span class="coord-tag pickup">Ghim xanh lá</span>
-                        </span>
+                        <span class="coord-tag pickup">Ghim xanh</span>
                     </div>
                     <div class="coord-row">
-                        <div class="coord-input">
-                            <input type="number" step="any" id="p_lat" name="pickup_latitude" 
-                                   value="40.761430" placeholder="Latitude">
-                        </div>
-                        <div class="coord-input">
-                            <input type="number" step="any" id="p_lon" name="pickup_longitude" 
-                                   value="-73.977600" placeholder="Longitude">
-                        </div>
+                        <div class="coord-input"><input type="number" step="any" id="p_lat" name="pickup_latitude" value="40.761430"></div>
+                        <div class="coord-input"><input type="number" step="any" id="p_lon" name="pickup_longitude" value="-73.977600"></div>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <div class="coord-label">
                         <label>🏁 Điểm trả (Dropoff)</label>
-                        <span class="side-note">
-                            <span class="coord-tag dropoff">Ghim đỏ</span>
-                        </span>
+                        <span class="coord-tag dropoff">Ghim đỏ</span>
                     </div>
                     <div class="coord-row">
-                        <div class="coord-input">
-                            <input type="number" step="any" id="d_lat" name="dropoff_latitude" 
-                                   value="40.750000" placeholder="Latitude">
-                        </div>
-                        <div class="coord-input">
-                            <input type="number" step="any" id="d_lon" name="dropoff_longitude" 
-                                   value="-73.990000" placeholder="Longitude">
-                        </div>
+                        <div class="coord-input"><input type="number" step="any" id="d_lat" name="dropoff_latitude" value="40.750000"></div>
+                        <div class="coord-input"><input type="number" step="any" id="d_lon" name="dropoff_longitude" value="-73.990000"></div>
                     </div>
                 </div>
 
-                <button type="submit">
-                    <span>🚀 Dự đoán ngay</span>
-                </button>
-
-                <div id="loading" class="loading-text">⏳ Đang gửi yêu cầu tới mô hình, vui lòng chờ...</div>
+                <button type="submit"><span>🚀 Dự đoán ngay</span></button>
+                <div id="loading" class="loading-text">⏳ Đang tính toán...</div>
             </form>
             
             <div class="result-box" id="result">
                 <div class="result-header">
-                    <div class="result-title">Kết quả dự báo thời gian chuyến đi</div>
-                    <div class="result-chip" id="rush_chip">Trạng thái giao thông</div>
+                    <div class="result-title">Kết quả dự báo</div>
+                    <div class="result-chip" id="rush_chip" style="font-size:10px; background:#d1fae5; padding:2px 6px; border-radius:4px;"></div>
                 </div>
                 <div class="result-main" id="time_text">-- phút</div>
                 <div class="result-meta">
-                    <span>📏 Quãng đường: <strong id="dist_text">--</strong> km</span>
-                    <span>🚦 Giờ cao điểm: <strong id="rush_text">--</strong></span>
+                    <span>📏 <strong id="dist_text">--</strong> km</span>
+                    <span>🚦 Cao điểm: <strong id="rush_text">--</strong></span>
                 </div>
             </div>
 
             <div class="error-box" id="error"></div>
-
-            <div class="footer-note">
-                <span>Gợi ý: thử thay đổi giờ sang buổi sáng hoặc chiều muộn để thấy ảnh hưởng của giờ cao điểm.</span>
-                <span>API endpoint: <code style="background:#f3f4f6; padding:2px 6px; border-radius:999px;">POST /predict</code></span>
-            </div>
         </div>
 
         <div class="map-section">
             <div class="map-overlay">
                 <span class="map-dot pickup"></span><span>Pickup</span>
                 <span class="map-dot dropoff" style="margin-left:6px;"></span><span>Dropoff</span>
-                <span style="margin-left:10px; font-size:10px; opacity:0.9;">Kéo ghim để cập nhật tọa độ</span>
             </div>
             <div id="map"></div>
         </div>
@@ -464,9 +218,7 @@
 
 <script>
     const NYC_CENTER = [40.7580, -73.9855];
-    const map = L.map('map', {
-        zoomControl: true
-    }).setView(NYC_CENTER, 13);
+    const map = L.map('map', { zoomControl: true }).setView(NYC_CENTER, 13);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
@@ -476,16 +228,28 @@
     const pLonIn = document.getElementById('p_lon');
     const dLatIn = document.getElementById('d_lat');
     const dLonIn = document.getElementById('d_lon');
-    const pickupMarker = L.marker([pLatIn.value, pLonIn.value], { draggable: true }).addTo(map);
-    const dropoffMarker = L.marker([dLatIn.value, dLonIn.value], { draggable: true }).addTo(map);
+    
+    const pickupIcon = new L.Icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/markers/marker-icon-2x-green.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+    });
 
-    pickupMarker.bindPopup("Pickup").openPopup();
-    dropoffMarker.bindPopup("Dropoff");
+    const dropoffIcon = new L.Icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/markers/marker-icon-2x-red.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+    });
+
+    const pickupMarker = L.marker([pLatIn.value, pLonIn.value], { icon: pickupIcon, draggable: true }).addTo(map);
+    const dropoffMarker = L.marker([dLatIn.value, dLonIn.value], { icon: dropoffIcon, draggable: true }).addTo(map);
+
+    pickupMarker.bindPopup("Điểm đón").openPopup();
+    dropoffMarker.bindPopup("Điểm trả");
 
     function updateInputsFromMarker() {
         const pPos = pickupMarker.getLatLng();
         const dPos = dropoffMarker.getLatLng();
-
         pLatIn.value = pPos.lat.toFixed(6);
         pLonIn.value = pPos.lng.toFixed(6);
         dLatIn.value = dPos.lat.toFixed(6);
@@ -500,7 +264,6 @@
         const pLon = parseFloat(pLonIn.value) || NYC_CENTER[1];
         const dLat = parseFloat(dLatIn.value) || NYC_CENTER[0];
         const dLon = parseFloat(dLonIn.value) || NYC_CENTER[1];
-
         pickupMarker.setLatLng([pLat, pLon]);
         dropoffMarker.setLatLng([dLat, dLon]);
     }
@@ -509,16 +272,13 @@
         input.addEventListener('input', updateMarkerFromInputs);
     });
 
-    // Fit để thấy cả 2 điểm ban đầu
     const initialGroup = new L.featureGroup([pickupMarker, dropoffMarker]);
     map.fitBounds(initialGroup.getBounds().pad(0.25));
 
-    // Set thời gian mặc định
     const now = new Date();
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
     document.querySelector('input[name="pickup_datetime"]').value = now.toISOString().slice(0, 16);
 
-    // Gửi Form
     document.getElementById('predictionForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -535,11 +295,13 @@
         loading.style.display = 'block';
 
         const formData = new FormData(e.target);
-        
-        // Lấy dữ liệu trực tiếp từ form (bao gồm cả input nhập tay)
+        const rawDate = formData.get('pickup_datetime'); 
+        const timePart = rawDate.substring(4); 
+        const fixedDate = "2016" + timePart + ":00";
+
         const data = {
             vendor_id: parseInt(formData.get('vendor_id')),
-            pickup_datetime: formData.get('pickup_datetime').replace('T', ' ') + ':00',
+            pickup_datetime: fixedDate.replace('T', ' '), // "2016-11-23 14:30:00"
             passenger_count: parseInt(formData.get('passenger_count')),
             pickup_longitude: parseFloat(formData.get('pickup_longitude')),
             pickup_latitude: parseFloat(formData.get('pickup_latitude')),
@@ -564,11 +326,12 @@
                 const isRush = result.is_rush_hour;
 
                 rushText.textContent = isRush ? 'Có' : 'Không';
-                rushChip.textContent = isRush ? '🚦 Dự báo giờ cao điểm' : '🚦 Ngoài giờ cao điểm';
+                rushChip.textContent = isRush ? 'Tắc đường' : 'Thông thoáng';
+                rushChip.style.background = isRush ? '#fee2e2' : '#dcfce7';
+                rushChip.style.color = isRush ? '#b91c1c' : '#166534';
 
                 resultBox.classList.add('show');
                 
-                // Zoom bản đồ để thấy cả 2 điểm
                 const group = new L.featureGroup([pickupMarker, dropoffMarker]);
                 map.fitBounds(group.getBounds().pad(0.25));
             } else {
