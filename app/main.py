@@ -60,29 +60,33 @@ async def predict(trip: TripInput):
         
         data_dict = trip.dict()
         
-        # 1️⃣ Feature engineering + cleaning
+        # 1️⃣ CHỈ CẦN feature engineering - KHÔNG clean_data
         df = feature_engineering(data_dict)
-        df = clean_data_not_drop(df, is_train=False)
+        # ❌ KHÔNG GỌI clean_data_not_drop ở đây!
 
         # 2️⃣ Fill các cột thiếu
         for col in feature_names:
             if col not in df.columns:
                 df[col] = 0
 
-        # 3️⃣ Scale numeric columns theo đúng thứ tự scaler
-        numeric_cols_in_df = [c for c in scaler.feature_names_in_ if c in df.columns]
-        df[numeric_cols_in_df] = scaler.transform(df[numeric_cols_in_df])
-
-        # 4️⃣ Sắp xếp theo feature_names (bắt buộc)
+        # 3️⃣ Sắp xếp theo feature_names TRƯỚC KHI scale
         df = df[feature_names]
-
-        # 5️⃣ Debug
-        print("\n=== DEBUG API vs CHECK ===")
+        
+        # DEBUG: In ra giá trị TRƯỚC khi scale
+        print("\n=== TRƯỚC KHI SCALE ===")
         for i, col in enumerate(df.columns):
             print(f"{i:02d} | {col:22s} | {df[col].values[0]:.4f}")
-        print("====================================")
+        
+        # 4️⃣ Scale numeric columns
+        numeric_cols_in_df = [c for c in scaler.feature_names_in_ if c in df.columns]
+        df[numeric_cols_in_df] = scaler.transform(df[numeric_cols_in_df])
+        
+        # DEBUG: In ra giá trị SAU khi scale
+        print("\n=== SAU KHI SCALE ===")
+        for i, col in enumerate(df.columns):
+            print(f"{i:02d} | {col:22s} | {df[col].values[0]:.4f}")
 
-        # 6️⃣ Predict
+        # 5️⃣ Predict
         log_pred = model.predict(df)[0]
         seconds = float(np.expm1(log_pred))
         if seconds < 0:
@@ -91,20 +95,17 @@ async def predict(trip: TripInput):
         mins = int(seconds // 60)
         secs = int(seconds % 60)
 
-        raw_dist = float(df['distance_km'].values[0])
-        is_rush = bool(df['is_rush_hour'].values[0])
-
-        print("=== DEBUG PREDICTION (API) ===")
-        print(f"log_pred (API)    : {log_pred}")
-        print(f"seconds (API)     : {seconds}")
-        print(f"duration_text(API): {mins} phút {secs} giây")
-        print("====================================")
+        print("\n=== PREDICTION ===")
+        print(f"log_pred  : {log_pred:.4f}")
+        print(f"seconds   : {seconds:.2f}")
+        print(f"duration  : {mins} phút {secs} giây")
+        print("==================")
 
         return {
             "success": True,
             "duration_text": f"{mins} phút {secs} giây",
-            "distance_km": round(raw_dist, 2),
-            "is_rush_hour": is_rush
+            "distance_km": round(float(df['distance_km'].values[0]), 2),
+            "is_rush_hour": bool(df['is_rush_hour'].values[0])
         }
 
     except Exception as e:
