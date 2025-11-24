@@ -1,47 +1,91 @@
 # 🚖 NYC Taxi Trip Duration Prediction System
 
-Hệ thống dự báo thời gian di chuyển taxi tại New York dựa trên dữ liệu lịch sử từ New York City Taxi & Limousine Commission , sử dụng Machine Learning và kiến trúc Microservice với FastAPI.
+Hệ thống dự báo thời gian di chuyển taxi tại New York City dựa trên dữ liệu lịch sử từ **New York City Taxi & Limousine Commission (TLC)**, sử dụng **Machine Learning** và kiến trúc **Microservice** với **FastAPI**.
 
-![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)
+![Python](https://img.shields.io/badge/Python-3.11-blue.svg)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.104-green.svg)
 ![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-1.3-orange.svg)
-![Docker](https://img.shields.io/badge/Docker-Enabled-blue)
-
-## 📖 Giới thiệu
-
-Dự án này giải quyết bài toán ước lượng thời gian chuyến đi (Trip Duration) dựa trên thông tin đầu vào như thời gian đón, địa điểm đón/trả và số lượng hành khách. Hệ thống được triển khai dưới dạng Web Application tích hợp bản đồ tương tác, giúp người dùng dễ dàng ước lượng thời gian di chuyển thực tế.
-
-### ✨ Tính năng chính
-- **Dự báo Real-time:** Tính toán thời gian dự kiến ngay lập tức.
-- **Bản đồ Tương tác (Interactive Map):** Tích hợp *Leaflet.js* cho phép kéo thả điểm đón/trả trực quan.
-- **Tự động trích xuất đặc trưng:** Hệ thống tự động tính toán khoảng cách Haversine, xác định giờ cao điểm, ngày cuối tuần từ dữ liệu thô.
-- **API Documentation:** Tích hợp sẵn Swagger UI để kiểm thử API.
+![XGBoost](https://img.shields.io/badge/XGBoost-3.1.2-red.svg)
+![Docker](https://img.shields.io/badge/Docker-Enabled-blue.svg)
 
 ---
 
-## 📂 Cấu trúc Dự án
+## 1. Giới thiệu
+
+Dự án giải quyết bài toán **ước lượng thời gian chuyến đi (Trip Duration)** dựa trên các thông tin đầu vào như:
+- Thời gian đón khách
+- Vị trí đón/trả
+- Số lượng hành khách
+- Hãng taxi lựa chọn
+
+Hệ thống được triển khai dưới dạng **Web Application** với bản đồ tương tác, giúp người dùng dễ dàng dự đoán thời gian di chuyển thực tế.
+
+### 1.1. Tính năng chính
+- **Dự báo thời gian thực:** Nhận dự đoán ngay lập tức qua API.
+- **Bản đồ tương tác:** Kéo thả điểm đón/trả trực quan với Leaflet.js.
+- **Tự động trích xuất đặc trưng:** Tính toán khoảng cách Haversine, giờ cao điểm, ngày cuối tuần từ dữ liệu thô.
+- **API Documentation:** Tích hợp Swagger UI để kiểm thử API.
+- **Đa dạng mô hình ML:** Sử dụng XGBoost, Random Forest, Linear Regression với pipeline chuẩn hóa dữ liệu.
+
+---
+
+## 2. Cấu trúc dự án
 
 ```text
 taxi-duration-in-NYC-prediction/
-├── artifacts/                  # Chứa các file nhị phân quan trọng (Model, Scaler)
-│   ├── best_model.pkl         # Mô hình ML đã huấn luyện tốt nhất
-│   ├── scaler.pkl              # Bộ chuẩn hóa dữ liệu (StandardScaler)
-│   └── feature_names.pkl       # Danh sách đặc trưng đầu vào
-├── src/                        # Source code xử lý logic
+├── artifacts/                  
+│   ├── model.pkl          		# Mô hình ML đã huấn luyện
+│   ├── scaler.pkl              # StandardScaler cho các feature numeric
+│   └── features.pkl       		# Danh sách các feature input
+├── baseline_result/ 
+│   ├── download.png		  	# Ảnh minh họa kết quả baseline
+│   └── submission.csv	  		# Kết quả cuối cùng nộp lên Kaggle
+├── src/                        
 │   ├── preprocessing.py        # Pipeline tiền xử lý dữ liệu
-│   └── utils.py                # Các hàm tiện ích (Haversine, v.v.)
-├── app/                        # Ứng dụng FastAPI
-│   ├── main.py                 # Entry point của server
-│   ├── templates/              # Giao diện người dùng (HTML/JS)
-│   └── static/                 # File tĩnh (CSS/Images)
-├── notebooks/                
+│   └── __init__.py             # Khởi tạo package
+├── app/                        
+│   ├── main.py                 # Entry point của FastAPI server
+│   ├── templates/              # HTML templates
+│   │   └── index.html		    # Trang chính với bản đồ
+│   └── static/                 # CSS, Images, JS
+├── notebooks/                 
 │   ├── data/
-│   │   ├── test.csv            # Dữ liệu kiểm thử mẫu
-│   │   └── train.csv           # Dữ liệu huấn luyện mẫu
-│   └── pipeline.ipynb          # Notebook xây dựng pipeline và huấn luyện mô hình                 
-├── tests/                       # Unit tests cho các module
-|   └──test_api.py
-├── requirements.txt            # Danh sách thư viện
+│   │   ├── train.csv           # Dữ liệu huấn luyện mẫu
+│   │   └── test.csv            # Dữ liệu kiểm thử mẫu
+│   └── pipeline.ipynb          # Notebook xây dựng pipeline & huấn luyện model
+├── tests/                      
+│   ├── check_features.py	  	# Unit tests cho tiền xử lý dữ liệu
+│   ├── check_scaler.py	  		# Unit tests cho StandardScaler
+│   └── test_api.py				# Unit tests cho API
+├── requirements.txt            # Danh sách thư viện Python
+├── LICENSE                    	# Giấy phép sử dụng
 ├── Dockerfile                  # Cấu hình Docker
+├── .gitignore                  # Loại trừ file/thư mục không cần thiết
+├── env/						# Cấu hình môi trường ảo
 └── README.md                   # Tài liệu hướng dẫn
+```
+## 3. Hướng dẫn cài đặt
+
+### 3.1. Tạo môi trường ảo
+
+``` python
+# Kiểm tra Python 3.11
+python3.11 --version
+# Tạo virtual environment
+python3.11 -m venv venv
+# Activate
+source venv/bin/activate # Linux/macOS
+venv\Scripts\activate     # Windows
+```
+
+### 3.2. Cài đặt dependencies
+
+```python
+pip install --upgrade pip  pip install -r requirements.txt
+```
+
+## 4. Chạy ứng dụng
+```python
+# Chạy server FastAPI
+uvicorn app.main:app --reload
 ```

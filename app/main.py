@@ -13,16 +13,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.append(str(BASE_DIR))
 from src.preprocessing import feature_engineering, clean_data_not_drop
 
-
-# NUMERICAL_COLS = [
-#     'vendor_id', 'passenger_count',
-#     'pickup_longitude', 'pickup_latitude',
-#     'dropoff_longitude', 'dropoff_latitude',
-#     'pickup_hour', 'pickup_weekday', 'pickup_month',
-#     'distance_km', 'direction', 'center_latitude', 'center_longitude'
-# ]
-
-
 app = FastAPI()
 
 try:
@@ -59,29 +49,21 @@ async def predict(trip: TripInput):
             raise HTTPException(status_code=500, detail="Model or scaler not loaded")
         
         data_dict = trip.dict()
-        
-        # 1️⃣ CHỈ CẦN feature engineering - KHÔNG clean_data
+    
         df = feature_engineering(data_dict)
-        # ❌ KHÔNG GỌI clean_data_not_drop ở đây!
-
-        # 2️⃣ Fill các cột thiếu
         for col in feature_names:
             if col not in df.columns:
                 df[col] = 0
 
-        # 3️⃣ Sắp xếp theo feature_names TRƯỚC KHI scale
         df = df[feature_names]
         
-        # DEBUG: In ra giá trị TRƯỚC khi scale
         print("\n=== TRƯỚC KHI SCALE ===")
         for i, col in enumerate(df.columns):
             print(f"{i:02d} | {col:22s} | {df[col].values[0]:.4f}")
         
-        # 4️⃣ Scale numeric columns
         numeric_cols_in_df = [c for c in scaler.feature_names_in_ if c in df.columns]
         df[numeric_cols_in_df] = scaler.transform(df[numeric_cols_in_df])
         
-        # DEBUG: In ra giá trị SAU khi scale
         print("\n=== SAU KHI SCALE ===")
         for i, col in enumerate(df.columns):
             print(f"{i:02d} | {col:22s} | {df[col].values[0]:.4f}")
