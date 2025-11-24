@@ -85,7 +85,32 @@ pip install --upgrade pip  pip install -r requirements.txt
 ```
 
 ## 4. Chạy ứng dụng
+### 4.1. Chạy bằng Uvicorn
 ```python
 # Chạy server FastAPI
 uvicorn app.main:app --reload
+```
+### 4.2. Chạy Docker
+
+1.  **Build image**:
+```bash 
+docker build -t taxi-app:latest .
+```
+
+2.  **Chạy container**:
+```bash
+docker run -d -p 8000:8000 --name taxi-container taxi-app:latest
+```
+
+*   \-d → chạy ở background
+    
+*   \-p 8000:8000 → map port host → container
+    
+*   \--name taxi-container → đặt tên container
+    
+
+3.  **Kiểm tra logs** (nếu muốn xem output):
+
+```bash
+docker logs -f taxi-container
 ```

@@ -11,7 +11,7 @@ import sys
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.append(str(BASE_DIR))
-from src.preprocessing import feature_engineering, clean_data_not_drop
+from src.preprocessing import feature_engineering
 
 app = FastAPI()
 
@@ -23,6 +23,8 @@ try:
         scaler = pickle.load(f)
     with open(ARTIFACT_DIR / "features.pkl", "rb") as f:
         feature_names = pickle.load(f)
+        
+    print("Tải lên thư mục lưu trữ thành công")
 except Exception as e:
     print("Lỗi: Tải lên thư mục lưu trữ không thành công")
     print(e)

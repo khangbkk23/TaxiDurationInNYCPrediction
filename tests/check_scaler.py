@@ -5,7 +5,7 @@ def check_scaler():
     path = 'artifacts/scaler.pkl'
     
     if not os.path.exists(path):
-        print("❌ Không tìm thấy file scaler.pkl")
+        print("Không tìm thấy file scaler.pkl")
         return
 
     with open(path, 'rb') as f:
