@@ -13,19 +13,27 @@ Hệ thống dự báo thời gian di chuyển taxi tại New York City dựa tr
 ## 1. Giới thiệu
 
 Dự án giải quyết bài toán **ước lượng thời gian chuyến đi (Trip Duration)** dựa trên các thông tin đầu vào như:
-- Thời gian đón khách
-- Vị trí đón/trả
-- Số lượng hành khách
-- Hãng taxi lựa chọn
+- Thời gian đón khách (`pickup_datetime`)
+- Vị trí đón / trả khách (kinh độ, vĩ độ)
+- Số lượng hành khách (`passenger_count`)
+- Hãng taxi (`vendor_id`)
 
 Hệ thống được triển khai dưới dạng **Web Application** với bản đồ tương tác, giúp người dùng dễ dàng dự đoán thời gian di chuyển thực tế.
 
 ### 1.1. Tính năng chính
-- **Dự báo thời gian thực:** Nhận dự đoán ngay lập tức qua API.
-- **Bản đồ tương tác:** Kéo thả điểm đón/trả trực quan với Leaflet.js.
-- **Tự động trích xuất đặc trưng:** Tính toán khoảng cách Haversine, giờ cao điểm, ngày cuối tuần từ dữ liệu thô.
-- **API Documentation:** Tích hợp Swagger UI để kiểm thử API.
-- **Đa dạng mô hình ML:** Sử dụng XGBoost, Random Forest, Linear Regression với pipeline chuẩn hóa dữ liệu.
+- ⏱ **Dự báo thời gian thực**: Nhập thông tin chuyến đi → nhận thời gian dự kiến ngay lập tức.
+- 🗺 **Bản đồ tương tác**: Tích hợp **Leaflet.js**, hỗ trợ chọn điểm đón/trả trực quan.
+- 🧮 **Tự động trích xuất đặc trưng**:
+  - Khoảng cách Haversine (`distance_km`)
+  - Hướng di chuyển (`direction`)
+  - Tâm tuyến đường (`center_latitude`, `center_longitude`)
+  - Tháng, ngày, thứ, giờ, phút, weekend, rush-hour, night…
+- 📚 **API Documentation**:
+  - Swagger UI tại `/docs`
+- 🤖 **Pipeline Machine Learning hoàn chỉnh**:
+  - Tiền xử lý + feature engineering + scaling
+  - Huấn luyện với **XGBoost**, **Random Forest**, **Linear Regression**…
+  - Lưu lại `model.pkl`, `scaler.pkl`, `features.pkl` để dùng cho API.
 
 ---
 
@@ -83,9 +91,12 @@ venv\Scripts\activate     # Windows
 ```python
 pip install --upgrade pip  pip install -r requirements.txt
 ```
+*Lưu ý*: requirements.txt đã được cấu hình khớp với bản train mô hình
+(Python 3.11.13, XGBoost 3.1.2, scikit-learn 1.7.2, ...).
 
 ## 4. Chạy ứng dụng
-### 4.1. Chạy bằng Uvicorn
+### 4.1. Chạy bằng Uvicorn (local)
+
 ```python
 # Chạy server FastAPI
 uvicorn app.main:app --reload
@@ -125,5 +136,20 @@ docker logs -f taxi-container
 ```bash
 docker stop taxi-container
 ```
+## 5. Cách retrain và cập nhật model
 
+1. Mở notebook: `notebooks/pipeline.ipynb`.
+
+2. Chạy lại toàn bộ pipeline với dữ liệu mới hoặc tuning tham số.
+
+3. Đảm bảo bước cuối cùng lưu lại:
+
+	* model.pkl
+
+	* scaler.pkl
+
+	* features.pkl
+vào thư mục artifacts/.
+
+4. Khởi động lại server FastAPI / container Docker để dùng model mới.
 __THE END__
