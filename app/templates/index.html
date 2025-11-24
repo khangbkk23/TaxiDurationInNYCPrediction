@@ -137,12 +137,12 @@
 
     <div class="container">
         <div class="form-section">
-            <h2 class="section-title"><span class="icon">🧾</span><span>Thông tin chuyến đi</span></h2>
+            <h2 class="section-title"><span>Thông tin chuyến đi</span></h2>
             <p class="subtitle">Chọn điểm đi/đến và thời gian dự kiến.</p>
 
             <div class="pill-row">
-                <div class="pill">⏱ Real-time inference</div>
-                <div class="pill">📅 Auto-fix Year 2016</div>
+                <div class="pill">Real-time inference</div>
+                <div class="pill">Auto-fix Year 2016</div>
             </div>
 
             <form id="predictionForm">
@@ -221,8 +221,6 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
 <script>
     const NYC_CENTER = [40.7580, -73.9855];
     const map = L.map('map', { zoomControl: true }).setView(NYC_CENTER, 13);
@@ -281,12 +279,9 @@
     const initialGroup = new L.featureGroup([pickupMarker, dropoffMarker]);
     map.fitBounds(initialGroup.getBounds().pad(0.25));
 
-    // Set default time
     const now = new Date();
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
     document.querySelector('input[name="pickup_datetime"]').value = now.toISOString().slice(0, 16);
-
-    // --- XỬ LÝ SUBMIT FORM ---
     document.getElementById('predictionForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -303,11 +298,13 @@
         loading.style.display = 'block';
 
         const formData = new FormData(e.target);
-        
-        // Logic ép năm 2016
-        const rawDate = formData.get('pickup_datetime'); 
-        const timePart = rawDate.substring(4); 
-        const fixedDate = "2016" + timePart + ":00";
+        const rawDateStr = formData.get('pickup_datetime');
+        const dateObj = new Date(rawDateStr);
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        const hours = String(dateObj.getHours()).padStart(2, '0');
+        const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+        const fixedDate = `2016-${month}-${day} ${hours}:${minutes}:00`;
         
         const data = {
             vendor_id: parseInt(formData.get('vendor_id')),
@@ -355,6 +352,6 @@
         }
     });
 </script>
-
+ 
 </body>
 </html>

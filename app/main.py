@@ -9,72 +9,30 @@ from pathlib import Path
 import os
 import sys
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-ALL_FEATURES = [
-    'vendor_id', 'passenger_count', 
-    'pickup_longitude', 'pickup_latitude',
-    'dropoff_longitude', 'dropoff_latitude', 'store_and_fwd_flag',
-    'pickup_month', 'pickup_day', 'pickup_hour',
-    'pickup_minute', 'pickup_weekday', 'pickup_yday', 'pickup_weekend',
-    'is_rush_hour', 'is_night',
-    'distance_km', 'direction',
-    'center_latitude', 'center_longitude'
-]
-
-SCALED_FEATURES = ['vendor_id', 'passenger_count', 'pickup_longitude', 'pickup_latitude', 'dropoff_longitude', 'dropoff_latitude', 'pickup_hour', 'pickup_weekday', 'pickup_month', 'distance_km', 'direction', 'center_latitude', 'center_longitude']
+BASE_DIR = Path(__file__).resolve().parent.parent
+sys.path.append(str(BASE_DIR))
+from src.preprocessing import feature_engineering
 
 
-def haversine_array(lat1, lon1, lat2, lon2):
-    R = 6378.137
-    lat1, lon1, lat2, lon2 = map(np.radians, [lat1, lon1, lat2, lon2])
-    dlat = lat2 - lat1
-    dlon = lon2 - lon1
-    a = np.sin(dlat/2)**2 + np.cos(lat1)*np.cos(lat2)*np.sin(dlon/2)**2
-    c = 2 * np.arcsin(np.sqrt(a))
-    return R * c
+# NUMERICAL_COLS = [
+#     'vendor_id', 'passenger_count',
+#     'pickup_longitude', 'pickup_latitude',
+#     'dropoff_longitude', 'dropoff_latitude',
+#     'pickup_hour', 'pickup_weekday', 'pickup_month',
+#     'distance_km', 'direction', 'center_latitude', 'center_longitude'
+# ]
 
-def transform_raw_data(data_dict):
-    df = pd.DataFrame([data_dict])
-    
-    df['pickup_datetime'] = pd.to_datetime(df['pickup_datetime'])
-    df['pickup_month'] = df['pickup_datetime'].dt.month
-    df['pickup_day'] = df['pickup_datetime'].dt.day
-    df['pickup_hour'] = df['pickup_datetime'].dt.hour
-    df['pickup_minute'] = df['pickup_datetime'].dt.minute
-    df['pickup_weekday'] = df['pickup_datetime'].dt.weekday
-    df['pickup_yday'] = df['pickup_datetime'].dt.dayofyear
-    
-    df['pickup_weekend'] = (df['pickup_weekday'] >= 5).astype(int)
-    df['is_rush_hour'] = (
-        ((df['pickup_hour'] >= 7) & (df['pickup_hour'] <= 9)) |
-        ((df['pickup_hour'] >= 17) & (df['pickup_hour'] <= 19))
-    ).astype(int)
-    df['is_night'] = ((df['pickup_hour'] >= 22) | (df['pickup_hour'] <= 5)).astype(int)
-    
-    df['distance_km'] = haversine_array(
-        df['pickup_latitude'], df['pickup_longitude'],
-        df['dropoff_latitude'], df['dropoff_longitude']
-    )
-    
-    dlon = df['dropoff_longitude'] - df['pickup_longitude']
-    dlat = df['dropoff_latitude'] - df['pickup_latitude']
-    df['direction'] = np.degrees(np.arctan2(dlat, dlon))
-    
-    df['center_latitude'] = (df['pickup_latitude'] + df['dropoff_latitude']) / 2
-    df['center_longitude'] = (df['pickup_longitude'] + df['dropoff_longitude']) / 2
-    df['store_and_fwd_flag'] = 1 if data_dict.get('store_and_fwd_flag') == 'Y' else 0
-    
-    return df
 
 app = FastAPI()
 
 try:
-    with open('artifacts/model.pkl', 'rb') as f:
+    ARTIFACT_DIR = BASE_DIR / "artifacts"
+    with open(ARTIFACT_DIR / "model.pkl", "rb") as f:
         model = pickle.load(f)
-    with open('artifacts/scaler.pkl', 'rb') as f:
+    with open(ARTIFACT_DIR / "scaler.pkl", "rb") as f:
         scaler = pickle.load(f)
-    print("Tải lên thư mục lưu trữ thành công")
+    with open(ARTIFACT_DIR / "features.pkl", "rb") as f:
+        feature_names = pickle.load(f)
 except Exception as e:
     print("Lỗi: Tải lên thư mục lưu trữ không thành công")
     print(e)
@@ -97,43 +55,46 @@ async def home():
 @app.post("/predict")
 async def predict(trip: TripInput):
     try:
-        df = transform_raw_data(trip.dict())
-        for col in ALL_FEATURES:
-            if col not in df.columns:
-                df[col] = 0
-
-        df_final = df[ALL_FEATURES].copy()
+        if model is None or scaler is None:
+            raise HTTPException(status_code=500, detail="Model or scaler not loaded")
         
-        raw_dist = df_final['distance_km'].values[0]
-        print(f"\nKhoảng cách tính toán (Raw): {raw_dist:.4f} km")
-        try:
-            df_subset = df_final[SCALED_FEATURES]
-            scaled_values = scaler.transform(df_subset)
-            df_final[SCALED_FEATURES] = scaled_values
-        except Exception as e:
-            return {"success": False, "detail": f"Lỗi Scaler: {e}"}
-        print(f"Chi tiết dữ liệu đầu vào: ({len(df_final.columns)} cột)")
-        print(f"{'index':<5} | {'feature name':<25} | {'value(scaled)'}")
-        row_values = df_final.iloc[0]
-        for i, col_name in enumerate(df_final.columns):
-            val = row_values[col_name]
-            val_str = f"{val:.4f}" if isinstance(val, (int, float, np.floating, np.integer)) else str(val)
-            print(f"{i:<5} | {col_name:<25} | {val_str}")
-        print("="*50 + "\n")
+        data_dict = trip.dict()
+        
+        df = feature_engineering(data_dict)
+        
+        df = df[feature_names].copy()
 
-        log_pred = model.predict(df_final)[0]
+        NUMERICAL_COLS = [col for col in scaler.feature_names_in_ if col in feature_names]
+        df_scaled = df.copy()
+        df_scaled[NUMERICAL_COLS] = scaler.transform(df[NUMERICAL_COLS])
+            
+        print("\n=== DEBUG API vs CHECK ===")
+        for i, col in enumerate(df_scaled.columns):
+            print(f"{i:02d} | {col:22s} | {df_scaled[col].values[0]:.4f}")
+        print("====================================")
+
+        log_pred = model.predict(df_scaled)[0]
         seconds = float(np.expm1(log_pred))
-        
         if seconds < 0:
             seconds = 0.0
+
         mins = int(seconds // 60)
         secs = int(seconds % 60)
-        
+
+        raw_dist = float(df['distance_km'].values[0])
+        is_rush = bool(df['is_rush_hour'].values[0])
+
+        print("=== DEBUG PREDICTION (API) ===")
+        print(f"log_pred (API)    : {log_pred}")
+        print(f"seconds (API)     : {seconds}")
+        print(f"duration_text(API): {mins} phút {secs} giây")
+        print("====================================")
+
         return {
             "success": True,
             "duration_text": f"{mins} phút {secs} giây",
-            "distance_km": round(float(raw_dist), 2),
-            "is_rush_hour": bool(df['is_rush_hour'].values[0])
+            "distance_km": round(raw_dist, 2),
+            "is_rush_hour": is_rush
         }
 
     except Exception as e:
