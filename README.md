@@ -90,6 +90,11 @@ pip install --upgrade pip  pip install -r requirements.txt
 # Chạy server FastAPI
 uvicorn app.main:app --reload
 ```
+
+* Mở trình duyệt và truy cập: `http://localhost:8000`
+* Để xem tài liệu API: `http://localhost:8000/docs`
+* Dừng server: `CTRL + C`
+  
 ### 4.2. Chạy Docker
 
 1.  **Build image**:
@@ -114,3 +119,11 @@ docker run -d -p 8000:8000 --name taxi-container taxi-app:latest
 ```bash
 docker logs -f taxi-container
 ```
+4. Mở trình duyệt và truy cập: `http://localhost:8000`
+
+5. Dừng container khi không sử dụng:
+```bash
+docker stop taxi-container
+```
+
+__THE END__
