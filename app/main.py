@@ -11,7 +11,7 @@ import sys
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.append(str(BASE_DIR))
-from src.preprocessing import feature_engineering
+from src.preprocessing import feature_engineering, clean_data_not_drop
 
 
 # NUMERICAL_COLS = [
@@ -60,20 +60,30 @@ async def predict(trip: TripInput):
         
         data_dict = trip.dict()
         
+        # 1️⃣ Feature engineering + cleaning
         df = feature_engineering(data_dict)
-        
-        df = df[feature_names].copy()
+        df = clean_data_not_drop(df, is_train=False)
 
-        NUMERICAL_COLS = [col for col in scaler.feature_names_in_ if col in feature_names]
-        df_scaled = df.copy()
-        df_scaled[NUMERICAL_COLS] = scaler.transform(df[NUMERICAL_COLS])
-            
+        # 2️⃣ Fill các cột thiếu
+        for col in feature_names:
+            if col not in df.columns:
+                df[col] = 0
+
+        # 3️⃣ Scale numeric columns theo đúng thứ tự scaler
+        numeric_cols_in_df = [c for c in scaler.feature_names_in_ if c in df.columns]
+        df[numeric_cols_in_df] = scaler.transform(df[numeric_cols_in_df])
+
+        # 4️⃣ Sắp xếp theo feature_names (bắt buộc)
+        df = df[feature_names]
+
+        # 5️⃣ Debug
         print("\n=== DEBUG API vs CHECK ===")
-        for i, col in enumerate(df_scaled.columns):
-            print(f"{i:02d} | {col:22s} | {df_scaled[col].values[0]:.4f}")
+        for i, col in enumerate(df.columns):
+            print(f"{i:02d} | {col:22s} | {df[col].values[0]:.4f}")
         print("====================================")
 
-        log_pred = model.predict(df_scaled)[0]
+        # 6️⃣ Predict
+        log_pred = model.predict(df)[0]
         seconds = float(np.expm1(log_pred))
         if seconds < 0:
             seconds = 0.0

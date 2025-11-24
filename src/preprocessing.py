@@ -80,3 +80,35 @@ def feature_engineering(data):
     df = df[ordered_columns]
     
     return df
+
+def clean_data_not_drop(df, is_train=True):
+    df = df.copy()
+    print(f"Initial shape: {df.shape}")
+
+    if is_train and 'trip_duration' in df.columns:
+        df = df[(df['trip_duration'] > 30) & (df['trip_duration'] < 3600 * 6)]
+        print(f"After duration filter: {df.shape}")
+
+    if is_train:
+        df = df[df['distance_km'] > 0]
+        print(f"After distance filter: {df.shape}")
+    else:
+        df.loc[df['distance_km'] <= 0, 'distance_km'] = 0.1
+
+    bounds = {'min_lat': 40.5, 'max_lat': 41.0, 'min_lon': -74.3, 'max_lon': -73.7}
+    if is_train:
+        df = df[
+            (df['pickup_latitude'].between(bounds['min_lat'], bounds['max_lat'])) &
+            (df['pickup_longitude'].between(bounds['min_lon'], bounds['max_lon'])) &
+            (df['dropoff_latitude'].between(bounds['min_lat'], bounds['max_lat'])) &
+            (df['dropoff_longitude'].between(bounds['min_lon'], bounds['max_lon']))
+        ]
+        print(f"After geographic filter: {df.shape}")
+    else:
+        df['pickup_latitude'] = df['pickup_latitude'].clip(bounds['min_lat'], bounds['max_lat'])
+        df['pickup_longitude'] = df['pickup_longitude'].clip(bounds['min_lon'], bounds['max_lon'])
+        df['dropoff_latitude'] = df['dropoff_latitude'].clip(bounds['min_lat'], bounds['max_lat'])
+        df['dropoff_longitude'] = df['dropoff_longitude'].clip(bounds['min_lon'], bounds['max_lon'])
+
+    print(f"After cleaning ({'train' if is_train else 'test'}): {df.shape}")
+    return df
