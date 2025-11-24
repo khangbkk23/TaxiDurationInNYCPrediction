@@ -54,7 +54,6 @@ def feature_engineering(data):
     if 'pickup_datetime' in df.columns:
         df = df.drop(columns=['pickup_datetime'])
     
-    # Sắp xếp lại theo đúng thứ tự 20 cột
     ordered_columns = [
         'vendor_id',
         'passenger_count',
@@ -78,7 +77,6 @@ def feature_engineering(data):
         'center_longitude'
     ]
     
-    # Đảm bảo có đủ và đúng thứ tự
     df = df[ordered_columns]
     
     return df

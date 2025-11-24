@@ -2,6 +2,7 @@ import pickle
 import pandas as pd
 import numpy as np
 from src.preprocessing import feature_engineering
+import os
 
 print("\n1️⃣  LOAD MODEL ARTIFACTS")
 with open('artifacts/features.pkl', 'rb') as f:
@@ -55,9 +56,9 @@ for i, col in enumerate(df.columns):
 # 5. So sánh với feature_names
 print("\n5️⃣  SO SÁNH VỚI MODEL")
 if list(df.columns) == feature_names:
-    print("Thứ tự columns CHÍNH XÁC!")
+    print("Thứ tự columns chính xác")
 else:
-    print("Thứ tự columns SAI!")
+    print("Thứ tự columns sai")
     print("\nExpected:")
     for i, col in enumerate(feature_names):
         print(f"  [{i:2d}] {col}")
@@ -79,7 +80,6 @@ df_scaled[NUMERICAL_COLS] = scaler.transform(df[NUMERICAL_COLS])
 print(f"\nChi tiết sau khi SCALE:")
 print("-"*70)
 print(f"{'Index':<6} {'Feature':<22} {'Original':<12} {'Scaled':<12}")
-print("-"*70)
 for i, col in enumerate(df.columns):
     original = df[col].values[0]
     scaled = df_scaled[col].values[0]
@@ -98,6 +98,18 @@ try:
     print(f"  Duration (minutes): {duration_minutes:.2f}")
     print(f"  Duration (text)   : {int(duration_minutes)} phút {int(duration_seconds % 60)} giây")
     print(f"  Distance (km)     : {df['distance_km'].values[0]:.2f}")
+    
+    print("=== API LOAD ARTIFACTS ===")
+    ARTIFACT_DIR = './artifacts'
+    model_path = os.path.join(ARTIFACT_DIR, 'model.pkl')
+    scaler_path = os.path.join(ARTIFACT_DIR, 'scaler.pkl')
+    print("MODEL PATH:", model_path)
+    print("SCALER PATH:", scaler_path)
+    print("MODEL TYPE:", type(model))
+    print("MODEL FEATURES:", getattr(model, "n_features_in_", "N/A"))
+    print("MODEL N_ESTIMATORS:", getattr(model, "n_estimators", "N/A"))
+    print("===========================")
+
     
 except Exception as e:
     print(f"PREDICTION FAILED!")

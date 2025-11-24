@@ -137,12 +137,12 @@
 
     <div class="container">
         <div class="form-section">
-            <h2 class="section-title"><span class="icon">🧾</span><span>Thông tin chuyến đi</span></h2>
+            <h2 class="section-title"><span>Thông tin chuyến đi</span></h2>
             <p class="subtitle">Chọn điểm đi/đến và thời gian dự kiến.</p>
 
             <div class="pill-row">
-                <div class="pill">⏱ Real-time inference</div>
-                <div class="pill">📅 Auto-fix Year 2016</div>
+                <div class="pill">Real-time inference</div>
+                <div class="pill">Auto-fix Year 2016</div>
             </div>
 
             <form id="predictionForm">
@@ -279,12 +279,9 @@
     const initialGroup = new L.featureGroup([pickupMarker, dropoffMarker]);
     map.fitBounds(initialGroup.getBounds().pad(0.25));
 
-    // Set default time
     const now = new Date();
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
     document.querySelector('input[name="pickup_datetime"]').value = now.toISOString().slice(0, 16);
-
-    // --- XỬ LÝ SUBMIT FORM ---
     document.getElementById('predictionForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         
