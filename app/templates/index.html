@@ -203,6 +203,7 @@
                 <div class="result-meta">
                     <span><strong id="dist_text">--</strong> km</span>
                     <span>Cao điểm: <strong id="rush_text">--</strong></span>
+                    <span>Cuối tuần: <strong id="weekend_text">--</strong></span>
                 </div>
             </div>
 
@@ -291,6 +292,9 @@
         const timeText = document.getElementById('time_text');
         const distText = document.getElementById('dist_text');
         const rushText = document.getElementById('rush_text');
+        const isWeekend = result.is_weekend;
+        document.getElementById('weekend_text').textContent = isWeekend ? 'Có' : 'Không';
+
         const rushChip = document.getElementById('rush_chip');
 
         resultBox.classList.remove('show');

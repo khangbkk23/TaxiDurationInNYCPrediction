@@ -60,6 +60,10 @@ async def predict(trip: TripInput):
         print("\n=== TRƯỚC KHI SCALE ===")
         for i, col in enumerate(df.columns):
             print(f"{i:02d} | {col:22s} | {df[col].values[0]:.4f}")
+            
+        raw_distance = float(df['distance_km'].values[0])
+        raw_is_rush = bool(df['is_rush_hour'].values[0])
+        raw_is_weekend = bool(df['pickup_weekend'].values[0])
         
         numeric_cols_in_df = [c for c in scaler.feature_names_in_ if c in df.columns]
         df[numeric_cols_in_df] = scaler.transform(df[numeric_cols_in_df])
@@ -68,7 +72,7 @@ async def predict(trip: TripInput):
         for i, col in enumerate(df.columns):
             print(f"{i:02d} | {col:22s} | {df[col].values[0]:.4f}")
 
-        # 5️⃣ Predict
+        # Predict
         log_pred = model.predict(df)[0]
         seconds = float(np.expm1(log_pred))
         if seconds < 0:
@@ -76,7 +80,7 @@ async def predict(trip: TripInput):
 
         mins = int(seconds // 60)
         secs = int(seconds % 60)
-
+        
         print("\n=== PREDICTION ===")
         print(f"log_pred  : {log_pred:.4f}")
         print(f"seconds   : {seconds:.2f}")
@@ -86,8 +90,9 @@ async def predict(trip: TripInput):
         return {
             "success": True,
             "duration_text": f"{mins} phút {secs} giây",
-            "distance_km": round(float(df['distance_km'].values[0]), 2),
-            "is_rush_hour": bool(df['is_rush_hour'].values[0])
+            "distance_km": round(raw_distance, 2),
+            "is_rush_hour": raw_is_rush,
+            "is_weekend": raw_is_weekend
         }
 
     except Exception as e:
