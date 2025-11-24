@@ -1,4 +1,4 @@
-# 🚖 NYC Taxi Trip Duration Prediction System
+# NYC Taxi Trip Duration Prediction System
 
 Hệ thống dự báo thời gian di chuyển taxi tại New York City dựa trên dữ liệu lịch sử từ **New York City Taxi & Limousine Commission (TLC)**, sử dụng **Machine Learning** và kiến trúc **Microservice** với **FastAPI**.
 
@@ -35,6 +35,9 @@ Hệ thống được triển khai dưới dạng **Web Application** với bả
   - Huấn luyện với **XGBoost**, **Random Forest**, **Linear Regression**…
   - Lưu lại `model.pkl`, `scaler.pkl`, `features.pkl` để dùng cho API.
 
+### 1.2. Mục đích của dự án
+
+Đây là sản phẩm được phát triển dựa trên đề tài của nhóm, phục vụ cho Bài tập lớn môn **Học máy**, học kỳ **251** tại **Trường Đại học Bách khoa – ĐHQG-HCM**.
 ---
 
 ## 2. Cấu trúc dự án
