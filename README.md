@@ -139,6 +139,16 @@ docker logs -f taxi-container
 ```bash
 docker stop taxi-container
 ```
+
+6. **Ở những lần chạy sau, chỉ cần truy cập trên `http://localhost:8000`.
+* Nếu container đã bị stop, chạy lại container:
+  ```bash
+  docker start taxi-container
+  ```
+* Kiểm tra container đã chạy chưa:
+  ```bash
+  docker ps
+  ```
 ## 5. Cách retrain và cập nhật model
 
 1. Mở notebook: `notebooks/pipeline.ipynb`.
