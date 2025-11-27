@@ -140,7 +140,7 @@ docker logs -f taxi-container
 docker stop taxi-container
 ```
 
-6. **Ở những lần chạy sau, chỉ cần truy cập trên `http://localhost:8000`.
+6. **Ở những lần chạy sau, chỉ cần truy cập trên `http://localhost:8000`**.
 * Nếu container đã bị stop, chạy lại container:
   ```bash
   docker start taxi-container
